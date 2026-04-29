@@ -371,9 +371,9 @@ Open **http://127.0.0.1:5000** in your browser.
 
 ## 👤 Author
 
-**Mukesh Kumar**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+**Rishabh Gupta**
+- GitHub: [GitHub](https://github.com/rishabhgupta123321)
+- LinkedIn: [LinkedIn]([https://linkedin.com/in/yourprofile](https://www.linkedin.com/in/-gupta-rishabh/))
 
 ## 📄 License
 
@@ -385,7 +385,7 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 
 ## Support
 
-For support, email mksahu857@gmail.com or create an issue in the repository.
+For support, email rishabhgupta78470@gmail.com or create an issue in the repository.
 
 ---
 
