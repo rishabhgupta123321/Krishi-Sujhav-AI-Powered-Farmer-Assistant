@@ -1,0 +1,24 @@
+# Core Flask Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+flask-cors==4.0.0
+flask-bcrypt==1.0.1
+python-dotenv==1.0.0
+
+# API & HTTP
+requests==2.31.0
+
+# AI & ML
+# google-generativeai is optional — REST API fallback is used instead (lighter for free hosting)
+numpy>=1.24.0
+Pillow>=9.0.0
+
+# Database — PostgreSQL (Render / Railway / local)
+psycopg2-binary>=2.9.0
+
+# Production Server
+gunicorn==21.2.0
+
+# Document Processing (10-20x faster than LangChain)
+PyPDF2>=3.0.0
+python-docx>=1.1.0
