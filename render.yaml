@@ -1,0 +1,33 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: Connect GitHub repo → Render auto-detects this file
+
+databases:
+  - name: krishi-db
+    plan: free
+    databaseName: farmdb
+    user: krishi_user
+
+services:
+  - type: web
+    name: krishi-sujhav
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: krishi-db
+          property: connectionString
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false          # Set manually in Render dashboard
+      - key: OPENWEATHER_API_KEY
+        sync: false          # Set manually in Render dashboard
+      - key: SMTP_EMAIL
+        sync: false          # Optional: set for password reset emails
+      - key: SMTP_PASSWORD
+        sync: false          # Optional: Gmail App Password
+      - key: PYTHON_VERSION
+        value: "3.11.6"
