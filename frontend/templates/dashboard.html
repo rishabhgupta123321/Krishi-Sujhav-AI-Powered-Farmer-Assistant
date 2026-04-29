@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Farmer Dashboard - Krishi Sujhav</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { accent: '#0ea5a4' }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(14, 165, 164, 0.3); } 50% { box-shadow: 0 0 20px rgba(14, 165, 164, 0.6); } }
+    .fade-in-up { animation: fadeInUp 0.5s ease-out; }
+    .slide-in { animation: slideIn 0.4s ease-out; }
+    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .alert-critical { border-left: 4px solid #ef4444; }
+    .alert-warning { border-left: 4px solid #f59e0b; }
+    .alert-info { border-left: 4px solid #3b82f6; }
+    .tab-active { border-bottom: 3px solid #0ea5a4; color: #0ea5a4; font-weight: 600; }
+    .msp-above { color: #16a34a; }
+    .msp-below { color: #dc2626; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    @media (max-width: 639px) {
+      .tab-content-panel { padding: 1rem !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 text-slate-900">
+
+  <!-- Top Navigation -->
+  <nav class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2 sm:gap-4 min-w-0">
+        <a href="/" class="flex items-center gap-1 sm:gap-2 text-accent hover:text-accent/80 transition-colors flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          <span class="text-sm font-medium hidden sm:inline">Back to Chat</span>
+        </a>
+        <div class="h-6 w-px bg-slate-200 hidden sm:block"></div>
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="h-8 w-8 sm:h-9 sm:w-9 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          </div>
+          <div class="min-w-0">
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 truncate">Farmer Dashboard</h1>
+            <p class="text-xs text-slate-500 hidden sm:block">Everything a farmer needs — in one place</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <select id="dashLang" onchange="changeDashLanguage(this.value)" class="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="mr">मराठी</option>
+          <option value="pa">ਪੰਜਾਬੀ</option>
+          <option value="ml">മലയാളം</option>
+          <option value="ta">தமிழ்</option>
+          <option value="te">తెలుగు</option>
+          <option value="kn">ಕನ್ನಡ</option>
+        </select>
+        <div class="flex items-center gap-2 text-sm text-slate-600">
+          <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white font-semibold text-sm">
+            {{ user.fullName[0].upper() if user else 'G' }}
+          </div>
+          <span class="hidden sm:inline">{{ user.fullName.split(' ')[0] if user else 'Guest' }}</span>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Emergency Alerts Banner -->
+  <div id="alertsBanner" class="bg-gradient-to-r from-red-50 to-orange-50 border-b border-red-200">
+    <div class="max-w-7xl mx-auto px-4 py-2">
+      <div id="alertsScroll" class="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+        <span class="text-red-600 font-bold text-sm whitespace-nowrap">🚨 ALERTS:</span>
+        <div id="alertsContent" class="flex gap-3 text-sm">
+          <span class="text-slate-500">Loading alerts...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- Quick Stats Row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in-up">
+      <!-- Current Season -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">🌾</span>
+          <span class="text-xs text-slate-500 font-medium" data-label="currentSeason">CURRENT SEASON</span>
+        </div>
+        <div id="currentSeason" class="text-lg font-bold text-slate-900">Loading...</div>
+        <div id="seasonMonth" class="text-xs text-slate-500"></div>
+      </div>
+      <!-- Weather -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 card-hover cursor-pointer" onclick="window.open('/weather','_blank')">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">🌤️</span>
+          <span class="text-xs text-slate-500 font-medium" data-label="weather">WEATHER</span>
+        </div>
+        <div id="dashWeatherTemp" class="text-lg font-bold text-slate-900">--°C</div>
+        <div id="dashWeatherCity" class="text-xs text-slate-500">Detecting...</div>
+      </div>
+      <!-- Active Alerts -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">⚠️</span>
+          <span class="text-xs text-slate-500 font-medium" data-label="activeAlerts">ACTIVE ALERTS</span>
+        </div>
+        <div id="alertCount" class="text-lg font-bold text-red-600">0</div>
+        <div class="text-xs text-slate-500">View below</div>
+      </div>
+      <!-- MSP Season -->
+      <div class="bg-white rounded-xl p-4 border border-slate-200 card-hover">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-2xl">💰</span>
+          <span class="text-xs text-slate-500 font-medium" data-label="mspSeason">MSP SEASON</span>
+        </div>
+        <div id="mspSeason" class="text-lg font-bold text-green-600">--</div>
+        <div id="mspYear" class="text-xs text-slate-500">2025-26</div>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div class="flex border-b border-slate-200 overflow-x-auto">
+        <button onclick="switchTab('mandi')" id="tab-mandi" class="px-5 py-3 text-sm font-medium text-slate-600 hover:text-accent whitespace-nowrap transition-colors tab-active">💰 Mandi Prices</button>
+        <button onclick="switchTab('schemes')" id="tab-schemes" class="px-5 py-3 text-sm font-medium text-slate-600 hover:text-accent whitespace-nowrap transition-colors">🏛️ Govt Schemes</button>
+        <button onclick="switchTab('calendar')" id="tab-calendar" class="px-5 py-3 text-sm font-medium text-slate-600 hover:text-accent whitespace-nowrap transition-colors">📅 Crop Calendar</button>
+        <button onclick="switchTab('soil')" id="tab-soil" class="px-5 py-3 text-sm font-medium text-slate-600 hover:text-accent whitespace-nowrap transition-colors">🧪 Soil Health</button>
+        <button onclick="switchTab('economics')" id="tab-economics" class="px-5 py-3 text-sm font-medium text-slate-600 hover:text-accent whitespace-nowrap transition-colors">📊 Farm Economics</button>
+        <button onclick="switchTab('alerts')" id="tab-alerts" class="px-5 py-3 text-sm font-medium text-slate-600 hover:text-accent whitespace-nowrap transition-colors">🚨 Alerts</button>
+      </div>
+
+      <!-- TAB: Mandi Prices -->
+      <div id="content-mandi" class="p-6 tab-content-panel">
+        <div class="flex flex-col md:flex-row gap-4 mb-6">
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Select Commodity</label>
+            <select id="mandiCommodity" class="crop-dropdown w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-white focus:ring-2 focus:ring-accent focus:border-transparent">
+              <option value="">-- Select Crop --</option>
+            </select>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-slate-700 mb-1">Select State (Optional)</label>
+            <select id="mandiState" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-white">
+              <option value="">All States</option>
+              <option value="maharashtra">Maharashtra</option>
+              <option value="punjab">Punjab</option>
+              <option value="haryana">Haryana</option>
+              <option value="uttar pradesh">Uttar Pradesh</option>
+              <option value="madhya pradesh">Madhya Pradesh</option>
+              <option value="rajasthan">Rajasthan</option>
+              <option value="gujarat">Gujarat</option>
+              <option value="karnataka">Karnataka</option>
+              <option value="tamil nadu">Tamil Nadu</option>
+              <option value="andhra pradesh">Andhra Pradesh</option>
+              <option value="west bengal">West Bengal</option>
+              <option value="bihar">Bihar</option>
+              <option value="kerala">Kerala</option>
+            </select>
+          </div>
+          <div class="flex items-end">
+            <button onclick="fetchMandiPrices()" class="bg-accent text-white px-6 py-2.5 rounded-lg font-medium hover:bg-accent/90 transition-colors shadow-sm">
+              🔍 Get Prices
+            </button>
+          </div>
+        </div>
+        <div id="mandiResults" class="space-y-4">
+          <div class="text-center py-12 text-slate-400">
+            <span class="text-4xl block mb-3">💰</span>
+            <p class="font-medium">Select a commodity to view Mandi prices</p>
+            <p class="text-sm mt-1">Compare prices across markets & MSP</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Government Schemes -->
+      <div id="content-schemes" class="p-6 hidden tab-content-panel">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-slate-900 mb-1">🏛️ Government Schemes for Farmers</h3>
+          <p class="text-sm text-slate-500">Find schemes you're eligible for. Click to view details and apply.</p>
+        </div>
+        <div id="schemesContent" class="grid md:grid-cols-2 gap-4">
+          <div class="text-center py-8 text-slate-400 col-span-2">Loading schemes...</div>
+        </div>
+      </div>
+
+      <!-- TAB: Crop Calendar -->
+      <div id="content-calendar" class="p-6 hidden tab-content-panel">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-slate-900 mb-1">📅 Monthly Farming Calendar</h3>
+          <p class="text-sm text-slate-500">Month-by-month tasks for your farming season</p>
+        </div>
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+          <button onclick="loadCalendarMonth(1)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Jan</button>
+          <button onclick="loadCalendarMonth(2)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Feb</button>
+          <button onclick="loadCalendarMonth(3)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Mar</button>
+          <button onclick="loadCalendarMonth(4)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Apr</button>
+          <button onclick="loadCalendarMonth(5)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">May</button>
+          <button onclick="loadCalendarMonth(6)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Jun</button>
+          <button onclick="loadCalendarMonth(7)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Jul</button>
+          <button onclick="loadCalendarMonth(8)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Aug</button>
+          <button onclick="loadCalendarMonth(9)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Sep</button>
+          <button onclick="loadCalendarMonth(10)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Oct</button>
+          <button onclick="loadCalendarMonth(11)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Nov</button>
+          <button onclick="loadCalendarMonth(12)" class="cal-month px-3 py-1.5 text-xs font-medium rounded-full border border-slate-200 hover:bg-accent hover:text-white transition-colors whitespace-nowrap">Dec</button>
+        </div>
+        <div id="calendarContent" class="space-y-3">
+          <div class="text-center py-8 text-slate-400">Loading calendar...</div>
+        </div>
+      </div>
+
+      <!-- TAB: Soil Health -->
+      <div id="content-soil" class="p-6 hidden tab-content-panel">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-slate-900 mb-1">🧪 Soil Health & Fertilizer Guide</h3>
+          <p class="text-sm text-slate-500">Get NPK recommendations and soil health advice</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+          <!-- Fertilizer Calculator -->
+          <div class="bg-green-50 rounded-xl p-5 border border-green-200">
+            <h4 class="font-bold text-green-800 mb-3">🧮 Fertilizer Calculator</h4>
+            <select id="soilCrop" class="crop-dropdown w-full border border-green-300 rounded-lg px-4 py-2.5 mb-3 bg-white">
+              <option value="">Select Crop</option>
+            </select>
+            <button onclick="calculateFertilizer()" class="w-full bg-green-600 text-white py-2.5 rounded-lg font-medium hover:bg-green-700 transition-colors">Calculate NPK</button>
+            <div id="fertilizerResult" class="mt-4"></div>
+          </div>
+          <!-- Soil Symptom Checker -->
+          <div class="bg-amber-50 rounded-xl p-5 border border-amber-200">
+            <h4 class="font-bold text-amber-800 mb-3">🔍 Soil Problem Checker</h4>
+            <textarea id="soilSymptoms" placeholder="Describe your soil problem... e.g., 'leaves turning yellow', 'soil is hard and cracking', 'white salt deposits on surface'" class="w-full border border-amber-300 rounded-lg px-4 py-2.5 mb-3 bg-white h-24 resize-none"></textarea>
+            <button onclick="analyzeSoilSymptoms()" class="w-full bg-amber-600 text-white py-2.5 rounded-lg font-medium hover:bg-amber-700 transition-colors">Analyze Symptoms</button>
+            <div id="soilAnalysisResult" class="mt-4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: Farm Economics -->
+      <div id="content-economics" class="p-6 hidden tab-content-panel">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-slate-900 mb-1">📊 Farm Profit Calculator</h3>
+          <p class="text-sm text-slate-500">Calculate your expected profit, ROI, and compare crops</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Select Crop</label>
+            <select id="econCrop" class="crop-dropdown w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-white">
+              <option value="">Choose crop</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Area (Hectares)</label>
+            <input type="number" id="econArea" value="1" step="0.1" min="0.1" class="w-full border border-slate-300 rounded-lg px-4 py-2.5 bg-white">
+          </div>
+          <div class="flex items-end">
+            <button onclick="calculateEconomics()" class="w-full bg-accent text-white py-2.5 rounded-lg font-medium hover:bg-accent/90 transition-colors">📊 Calculate</button>
+          </div>
+        </div>
+        <div id="economicsResult" class="space-y-4">
+          <div class="text-center py-12 text-slate-400">
+            <span class="text-4xl block mb-3">📊</span>
+            <p class="font-medium">Select a crop and area to calculate farm economics</p>
+          </div>
+        </div>
+        <!-- Crop Comparison -->
+        <div class="mt-8 pt-6 border-t border-slate-200">
+          <h4 class="font-bold text-slate-900 mb-3">🔄 Compare Crops (1 Hectare)</h4>
+          <button onclick="compareCrops()" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors mb-4">Compare Top 5 Crops</button>
+          <div id="cropCompareResult"></div>
+        </div>
+      </div>
+
+      <!-- TAB: Alerts -->
+      <div id="content-alerts" class="p-6 hidden tab-content-panel">
+        <div class="mb-6">
+          <h3 class="text-lg font-bold text-slate-900 mb-1">🚨 Agricultural Alerts & Warnings</h3>
+          <p class="text-sm text-slate-500">Pest outbreaks, weather warnings, scheme deadlines</p>
+        </div>
+        <div id="alertsFullContent" class="space-y-4">
+          <div class="text-center py-8 text-slate-400">Loading alerts...</div>
+        </div>
+      </div>
+
+    </div><!-- End tabs container -->
+
+    <!-- Helpline Footer -->
+    <div class="bg-gradient-to-r from-accent/10 to-emerald-50 rounded-xl border border-accent/20 p-5 fade-in-up">
+      <h3 class="font-bold text-slate-900 mb-3">📞 Important Farmer Helplines</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+          <div class="font-bold text-accent">1800-180-1551</div>
+          <div class="text-xs text-slate-500">Kisan Call Center (Free)</div>
+        </div>
+        <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+          <div class="font-bold text-accent">155261</div>
+          <div class="text-xs text-slate-500">PM-KISAN Helpline</div>
+        </div>
+        <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+          <div class="font-bold text-accent">1800-200-6468</div>
+          <div class="text-xs text-slate-500">PMFBY Insurance</div>
+        </div>
+        <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+          <div class="font-bold text-accent">14599</div>
+          <div class="text-xs text-slate-500">e-NAM Trading</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ==================== LANGUAGE STATE ====================
+    let currentLang = '{{ user.languagePreference if user else "en" }}' || 'en';
+    // Normalize full-name language codes from legacy DB entries
+    const _langCodeMap = {english:'en', hindi:'hi', marathi:'mr', punjabi:'pa', malayalam:'ml', tamil:'ta', telugu:'te', kannada:'kn'};
+    currentLang = _langCodeMap[currentLang.toLowerCase()] || currentLang;
+    let cropNamesCache = {};
+
+    // Dashboard UI labels per language
+    const dashLabels = {
+      en: { selectCrop: '-- Select Crop --', chooseCrop: 'Choose crop', allStates: 'All States', getPrices: '🔍 Get Prices', calculateNPK: 'Calculate NPK',
+            analyzeSymptoms: 'Analyze Symptoms', calculate: '📊 Calculate', compare: 'Compare Top 5 Crops', currentSeason: 'CURRENT SEASON', weather: 'WEATHER',
+            activeAlerts: 'ACTIVE ALERTS', mspSeason: 'MSP SEASON', mandiPrices: '💰 Mandi Prices', govtSchemes: '🏛️ Govt Schemes', cropCalendar: '📅 Crop Calendar',
+            soilHealth: '🧪 Soil Health', farmEcon: '📊 Farm Economics', alerts: '🚨 Alerts', selectCommodity: 'Select Commodity', selectState: 'Select State (Optional)',
+            fertCalc: '🧮 Fertilizer Calculator', soilChecker: '🔍 Soil Problem Checker', profitCalc: '📊 Farm Profit Calculator', describeProblem: 'Describe your soil problem...',
+            selectCropView: 'Select a commodity to view Mandi prices', comparePrices: 'Compare prices across markets & MSP' },
+      hi: { selectCrop: '-- फसल चुनें --', chooseCrop: 'फसल चुनें', allStates: 'सभी राज्य', getPrices: '🔍 भाव देखें', calculateNPK: 'NPK गणना करें',
+            analyzeSymptoms: 'लक्षण विश्लेषण', calculate: '📊 गणना करें', compare: 'शीर्ष 5 फसलों की तुलना', currentSeason: 'वर्तमान मौसम', weather: 'मौसम',
+            activeAlerts: 'सक्रिय अलर्ट', mspSeason: 'MSP सीजन', mandiPrices: '💰 मंडी भाव', govtSchemes: '🏛️ सरकारी योजनाएं', cropCalendar: '📅 फसल कैलेंडर',
+            soilHealth: '🧪 मिट्टी स्वास्थ्य', farmEcon: '📊 कृषि अर्थशास्त्र', alerts: '🚨 अलर्ट', selectCommodity: 'फसल चुनें', selectState: 'राज्य चुनें (वैकल्पिक)',
+            fertCalc: '🧮 उर्वरक कैलकुलेटर', soilChecker: '🔍 मिट्टी समस्या जांच', profitCalc: '📊 कृषि लाभ कैलकुलेटर', describeProblem: 'अपनी मिट्टी की समस्या बताएं...',
+            selectCropView: 'मंडी भाव देखने के लिए फसल चुनें', comparePrices: 'बाजारों और MSP में भाव की तुलना करें' },
+      mr: { selectCrop: '-- पीक निवडा --', chooseCrop: 'पीक निवडा', allStates: 'सर्व राज्ये', getPrices: '🔍 भाव पहा', calculateNPK: 'NPK गणना',
+            analyzeSymptoms: 'लक्षणे विश्लेषण', calculate: '📊 गणना करा', compare: 'शीर्ष 5 पिकांची तुलना', currentSeason: 'सध्याचा हंगाम', weather: 'हवामान',
+            activeAlerts: 'सक्रिय सूचना', mspSeason: 'MSP हंगाम', mandiPrices: '💰 बाजार भाव', govtSchemes: '🏛️ सरकारी योजना', cropCalendar: '📅 पीक दिनदर्शिका',
+            soilHealth: '🧪 माती आरोग्य', farmEcon: '📊 शेती अर्थशास्त्र', alerts: '🚨 सूचना', selectCommodity: 'पीक निवडा', selectState: 'राज्य निवडा (ऐच्छिक)',
+            fertCalc: '🧮 खत कॅलक्युलेटर', soilChecker: '🔍 माती समस्या तपासणी', profitCalc: '📊 शेती नफा कॅलक्युलेटर', describeProblem: 'तुमची मातीची समस्या सांगा...',
+            selectCropView: 'बाजार भाव पाहण्यासाठी पीक निवडा', comparePrices: 'बाजार आणि MSP मध्ये भावांची तुलना करा' },
+      pa: { selectCrop: '-- ਫ਼ਸਲ ਚੁਣੋ --', chooseCrop: 'ਫ਼ਸਲ ਚੁਣੋ', allStates: 'ਸਾਰੇ ਰਾਜ', getPrices: '🔍 ਭਾਅ ਵੇਖੋ', calculateNPK: 'NPK ਗਣਨਾ',
+            analyzeSymptoms: 'ਲੱਛਣ ਵਿਸ਼ਲੇਸ਼ਣ', calculate: '📊 ਗਣਨਾ', compare: 'ਚੋਟੀ ਦੀਆਂ 5 ਫ਼ਸਲਾਂ ਦੀ ਤੁਲਨਾ', currentSeason: 'ਮੌਜੂਦਾ ਮੌਸਮ', weather: 'ਮੌਸਮ',
+            activeAlerts: 'ਸਰਗਰਮ ਅਲਰਟ', mspSeason: 'MSP ਸੀਜ਼ਨ', mandiPrices: '💰 ਮੰਡੀ ਭਾਅ', govtSchemes: '🏛️ ਸਰਕਾਰੀ ਯੋਜਨਾਵਾਂ', cropCalendar: '📅 ਫ਼ਸਲ ਕੈਲੰਡਰ',
+            soilHealth: '🧪 ਮਿੱਟੀ ਸਿਹਤ', farmEcon: '📊 ਖੇਤੀ ਅਰਥ ਸ਼ਾਸਤਰ', alerts: '🚨 ਅਲਰਟ', selectCommodity: 'ਫ਼ਸਲ ਚੁਣੋ', selectState: 'ਰਾਜ ਚੁਣੋ (ਵਿਕਲਪਿਕ)',
+            fertCalc: '🧮 ਖਾਦ ਕੈਲਕੁਲੇਟਰ', soilChecker: '🔍 ਮਿੱਟੀ ਸਮੱਸਿਆ ਜਾਂਚ', profitCalc: '📊 ਖੇਤੀ ਲਾਭ ਕੈਲਕੁਲੇਟਰ', describeProblem: 'ਆਪਣੀ ਮਿੱਟੀ ਦੀ ਸਮੱਸਿਆ ਦੱਸੋ...',
+            selectCropView: 'ਮੰਡੀ ਭਾਅ ਵੇਖਣ ਲਈ ਫ਼ਸਲ ਚੁਣੋ', comparePrices: 'ਬਾਜ਼ਾਰਾਂ ਅਤੇ MSP ਵਿੱਚ ਭਾਅ ਦੀ ਤੁਲਨਾ ਕਰੋ' },
+      ml: { selectCrop: '-- വിള തിരഞ്ഞെടുക്കുക --', chooseCrop: 'വിള തിരഞ്ഞെടുക്കുക', allStates: 'എല്ലാ സംസ്ഥാനങ്ങളും', getPrices: '🔍 വില കാണുക', calculateNPK: 'NPK കണക്കാക്കുക',
+            analyzeSymptoms: 'ലക്ഷണങ്ങൾ വിശകലനം', calculate: '📊 കണക്കാക്കുക', compare: 'മികച്ച 5 വിളകൾ താരതമ്യം', currentSeason: 'നിലവിലെ സീസൺ', weather: 'കാലാവസ്ഥ',
+            activeAlerts: 'സജീവ അലേർട്ടുകൾ', mspSeason: 'MSP സീസൺ', mandiPrices: '💰 മാർക്കറ്റ് വില', govtSchemes: '🏛️ സർക്കാർ പദ്ധതികൾ', cropCalendar: '📅 വിള കലണ്ടർ',
+            soilHealth: '🧪 മണ്ണ് ആരോഗ്യം', farmEcon: '📊 കൃഷി സാമ്പത്തികം', alerts: '🚨 അലേർട്ടുകൾ', selectCommodity: 'ചരക്ക് തിരഞ്ഞെടുക്കുക', selectState: 'സംസ്ഥാനം തിരഞ്ഞെടുക്കുക (ഐച്ഛികം)',
+            fertCalc: '🧮 വള കാൽക്കുലേറ്റർ', soilChecker: '🔍 മണ്ണ് പ്രശ്ന പരിശോധന', profitCalc: '📊 കൃഷി ലാഭ കാൽക്കുലേറ്റർ', describeProblem: 'നിങ്ങളുടെ മണ്ണിന്റെ പ്രശ്നം വിവരിക്കുക...',
+            selectCropView: 'മാർക്കറ്റ് വില കാണുന്നതിന് വിള തിരഞ്ഞെടുക്കുക', comparePrices: 'മാർക്കറ്റുകളിലും MSP-യിലും വില താരതമ്യം ചെയ്യുക' },
+      ta: { selectCrop: '-- பயிர் தேர்ந்தெடு --', chooseCrop: 'பயிர் தேர்ந்தெடு', allStates: 'அனைத்து மாநிலங்கள்', getPrices: '🔍 விலை பார்', calculateNPK: 'NPK கணக்கிடு',
+            analyzeSymptoms: 'அறிகுறி பகுப்பாய்வு', calculate: '📊 கணக்கிடு', compare: 'முதல் 5 பயிர்கள் ஒப்பிடு', currentSeason: 'நடப்பு பருவம்', weather: 'வானிலை',
+            activeAlerts: 'செயலில் உள்ள எச்சரிக்கைகள்', mspSeason: 'MSP பருவம்', mandiPrices: '💰 சந்தை விலை', govtSchemes: '🏛️ அரசு திட்டங்கள்', cropCalendar: '📅 பயிர் நாட்காட்டி',
+            soilHealth: '🧪 மண் ஆரோக்கியம்', farmEcon: '📊 விவசாய பொருளாதாரம்', alerts: '🚨 எச்சரிக்கைகள்', selectCommodity: 'பொருளை தேர்ந்தெடு', selectState: 'மாநிலம் தேர்ந்தெடு (விருப்பம்)',
+            fertCalc: '🧮 உர கால்குலேட்டர்', soilChecker: '🔍 மண் பிரச்சனை சோதனை', profitCalc: '📊 விவசாய லாப கால்குலேட்டர்', describeProblem: 'உங்கள் மண் பிரச்சனையை விவரியுங்கள்...',
+            selectCropView: 'சந்தை விலை பார்க்க பயிர் தேர்ந்தெடுங்கள்', comparePrices: 'சந்தைகள் மற்றும் MSP இடையே விலை ஒப்பிடுங்கள்' },
+      te: { selectCrop: '-- పంట ఎంచుకోండి --', chooseCrop: 'పంట ఎంచుకోండి', allStates: 'అన్ని రాష్ట్రాలు', getPrices: '🔍 ధరలు చూడండి', calculateNPK: 'NPK లెక్కింపు',
+            analyzeSymptoms: 'లక్షణాల విశ్లేషణ', calculate: '📊 లెక్కించు', compare: 'టాప్ 5 పంటలు పోల్చండి', currentSeason: 'ప్రస్తుత సీజన్', weather: 'వాతావరణం',
+            activeAlerts: 'యాక్టివ్ అలర్ట్‌లు', mspSeason: 'MSP సీజన్', mandiPrices: '💰 మార్కెట్ ధరలు', govtSchemes: '🏛️ ప్రభుత్వ పథకాలు', cropCalendar: '📅 పంట క్యాలెండర్',
+            soilHealth: '🧪 నేల ఆరోగ్యం', farmEcon: '📊 వ్యవసాయ ఆర్థికశాస్త్రం', alerts: '🚨 అలర్ట్‌లు', selectCommodity: 'సరికు ఎంచుకోండి', selectState: 'రాష్ట్రం ఎంచుకోండి (ఐచ్ఛికం)',
+            fertCalc: '🧮 ఎరువుల కాల్క్యులేటర్', soilChecker: '🔍 నేల సమస్య తనిఖీ', profitCalc: '📊 వ్యవసాయ లాభం కాల్క్యులేటర్', describeProblem: 'మీ నేల సమస్యను వివరించండి...',
+            selectCropView: 'మార్కెట్ ధరలు చూడటానికి పంట ఎంచుకోండి', comparePrices: 'మార్కెట్‌లు మరియు MSP మధ్య ధరలు పోల్చండి' },
+      kn: { selectCrop: '-- ಬೆಳೆ ಆಯ್ಕೆಮಾಡಿ --', chooseCrop: 'ಬೆಳೆ ಆಯ್ಕೆಮಾಡಿ', allStates: 'ಎಲ್ಲಾ ರಾಜ್ಯಗಳು', getPrices: '🔍 ಬೆಲೆ ನೋಡಿ', calculateNPK: 'NPK ಲೆಕ್ಕಹಾಕಿ',
+            analyzeSymptoms: 'ರೋಗಲಕ್ಷಣ ವಿಶ್ಲೇಷಣೆ', calculate: '📊 ಲೆಕ್ಕಹಾಕಿ', compare: 'ಟಾಪ್ 5 ಬೆಳೆಗಳ ಹೋಲಿಕೆ', currentSeason: 'ಪ್ರಸ್ತುತ ಋತು', weather: 'ಹವಾಮಾನ',
+            activeAlerts: 'ಸಕ್ರಿಯ ಎಚ್ಚರಿಕೆಗಳು', mspSeason: 'MSP ಋತು', mandiPrices: '💰 ಮಾರುಕಟ್ಟೆ ಬೆಲೆ', govtSchemes: '🏛️ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು', cropCalendar: '📅 ಬೆಳೆ ಕ್ಯಾಲೆಂಡರ್',
+            soilHealth: '🧪 ಮಣ್ಣಿನ ಆರೋಗ್ಯ', farmEcon: '📊 ಕೃಷಿ ಅರ್ಥಶಾಸ್ತ್ರ', alerts: '🚨 ಎಚ್ಚರಿಕೆಗಳು', selectCommodity: 'ಸರಕು ಆಯ್ಕೆಮಾಡಿ', selectState: 'ರಾಜ್ಯ ಆಯ್ಕೆಮಾಡಿ (ಐಚ್ಛಿಕ)',
+            fertCalc: '🧮 ಗೊಬ್ಬರ ಕ್ಯಾಲ್ಕುಲೇಟರ್', soilChecker: '🔍 ಮಣ್ಣಿನ ಸಮಸ್ಯೆ ಪರಿಶೀಲನೆ', profitCalc: '📊 ಕೃಷಿ ಲಾಭ ಕ್ಯಾಲ್ಕುಲೇಟರ್', describeProblem: 'ನಿಮ್ಮ ಮಣ್ಣಿನ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ...',
+            selectCropView: 'ಮಾರುಕಟ್ಟೆ ಬೆಲೆ ನೋಡಲು ಬೆಳೆ ಆಯ್ಕೆಮಾಡಿ', comparePrices: 'ಮಾರುಕಟ್ಟೆಗಳು ಮತ್ತು MSP ನಡುವೆ ಬೆಲೆ ಹೋಲಿಕೆ ಮಾಡಿ' },
+    };
+    function L(key) { return (dashLabels[currentLang] || dashLabels['en'])?.[key] || dashLabels['en'][key] || key; }
+
+    // ==================== TAB SYSTEM ====================
+    function switchTab(tabName) {
+      // Hide all content
+      document.querySelectorAll('[id^="content-"]').forEach(el => el.classList.add('hidden'));
+      // Remove active from all tabs
+      document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.remove('tab-active'));
+      // Show selected content
+      document.getElementById('content-' + tabName).classList.remove('hidden');
+      document.getElementById('tab-' + tabName).classList.add('tab-active');
+      
+      // Load data for tab
+      if (tabName === 'schemes') loadSchemes();
+      if (tabName === 'calendar') { const cm = new Date().getMonth() + 1; loadCalendarMonth(cm); }
+      if (tabName === 'alerts') loadAlerts();
+    }
+
+    // ==================== MANDI PRICES ====================
+    async function fetchMandiPrices() {
+      const commodity = document.getElementById('mandiCommodity').value;
+      const state = document.getElementById('mandiState').value;
+      if (!commodity) { alert('Please select a commodity'); return; }
+      
+      const resultsDiv = document.getElementById('mandiResults');
+      resultsDiv.innerHTML = '<div class="text-center py-8"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div><p class="text-sm text-slate-500 mt-2">Fetching prices...</p></div>';
+      
+      try {
+        const resp = await fetch(`/api/mandi/prices?commodity=${commodity}&state=${state}`);
+        const data = await resp.json();
+        
+        if (data.success) {
+          let html = '';
+          
+          // Handle commodity_not_found
+          if (data.message === 'commodity_not_found') {
+            resultsDiv.innerHTML = `<div class="text-center py-8 text-amber-600">
+              <span class="text-4xl block mb-3">🔍</span>
+              <p class="font-medium">Commodity not found in our database</p>
+              <p class="text-sm mt-1 text-slate-500">Available: ${(data.available_commodities || []).join(', ')}</p>
+            </div>`;
+            return;
+          }
+          
+          // Statistics Card + Source Badge
+          const cropDisplayName = cropNamesCache[commodity]?.name || data.commodity_names?.en || commodity.charAt(0).toUpperCase() + commodity.slice(1);
+          const isLive = data.source === 'data.gov.in';
+          const sourceBadge = isLive
+            ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">🟢 Live — data.gov.in</span>`
+            : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">🟡 Estimated — Market Intelligence</span>`;
+          html += `<div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-200 slide-in">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h4 class="font-bold text-green-800 text-lg">${cropDisplayName} — Market Overview</h4>
+                <div class="mt-1">${sourceBadge}</div>
+              </div>
+              <span class="text-xs text-slate-500">${data.timestamp ? new Date(data.timestamp).toLocaleString() : ''}</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500">Avg Price</div>
+                <div class="text-xl font-bold text-green-700">₹${data.statistics.avg_price}</div>
+                <div class="text-xs text-slate-400">per quintal</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500">Min Price</div>
+                <div class="text-xl font-bold text-blue-600">₹${data.statistics.min_price}</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500">Max Price</div>
+                <div class="text-xl font-bold text-orange-600">₹${data.statistics.max_price}</div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-center">
+                <div class="text-xs text-slate-500">MSP (Govt)</div>
+                <div class="text-xl font-bold ${data.msp ? (data.statistics.avg_price >= data.msp ? 'msp-above' : 'msp-below') : 'text-slate-400'}">
+                  ${data.msp ? '₹' + data.msp : 'N/A'}
+                </div>
+                ${data.msp_comparison ? `<div class="text-xs ${data.statistics.avg_price >= data.msp ? 'text-green-600' : 'text-red-600'}">${data.msp_comparison}</div>` : ''}
+              </div>
+            </div>
+            ${data.recommendation ? `<div class="mt-3 p-3 bg-white rounded-lg text-sm"><strong>💡 Advice:</strong> ${data.recommendation}</div>` : ''}
+          </div>`;
+          
+          // Price Table
+          if (data.prices && data.prices.length > 0) {
+            html += `<div class="bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto">
+              <table class="w-full text-sm min-w-[500px]">
+                <thead class="bg-slate-50">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600">State</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold text-slate-600">Market</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600">Min (₹/qtl)</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600">Max (₹/qtl)</th>
+                    <th class="px-4 py-3 text-right text-xs font-semibold text-slate-600">Modal (₹/qtl)</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+            
+            data.prices.forEach((p, i) => {
+              const modalClass = data.msp && p.modal_price >= data.msp ? 'text-green-600 font-bold' : (data.msp ? 'text-red-600' : '');
+              html += `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-accent/5">
+                <td class="px-4 py-2.5">${p.state}</td>
+                <td class="px-4 py-2.5 font-medium">${p.market}</td>
+                <td class="px-4 py-2.5 text-right">₹${p.min_price}</td>
+                <td class="px-4 py-2.5 text-right">₹${p.max_price}</td>
+                <td class="px-4 py-2.5 text-right ${modalClass}">₹${p.modal_price}</td>
+              </tr>`;
+            });
+            
+            html += `</tbody></table></div>`;
+          }
+          
+          resultsDiv.innerHTML = html;
+        } else {
+          resultsDiv.innerHTML = `<div class="text-center py-8 text-red-500">${data.error || 'Failed to fetch prices'}</div>`;
+        }
+      } catch(e) {
+        resultsDiv.innerHTML = `<div class="text-center py-8 text-red-500">Error: ${e.message}</div>`;
+      }
+    }
+
+    // ==================== GOVERNMENT SCHEMES ====================
+    async function loadSchemes() {
+      try {
+        const resp = await fetch('/api/schemes');
+        const data = await resp.json();
+        
+        if (data.success && data.schemes) {
+          const container = document.getElementById('schemesContent');
+          let html = '';
+          
+          data.schemes.forEach(scheme => {
+            const categoryColors = {
+              'income_support': 'bg-green-50 border-green-200',
+              'insurance': 'bg-blue-50 border-blue-200',
+              'credit': 'bg-purple-50 border-purple-200',
+              'soil_health': 'bg-amber-50 border-amber-200',
+              'pension': 'bg-pink-50 border-pink-200',
+              'organic_farming': 'bg-lime-50 border-lime-200',
+              'irrigation': 'bg-cyan-50 border-cyan-200',
+              'market_access': 'bg-orange-50 border-orange-200',
+              'infrastructure': 'bg-indigo-50 border-indigo-200',
+              'food_security': 'bg-teal-50 border-teal-200',
+            };
+            const colorClass = categoryColors[scheme.category] || 'bg-slate-50 border-slate-200';
+            
+            html += `<div class="${colorClass} rounded-xl p-5 border card-hover cursor-pointer" onclick="window.open('${scheme.url || '#'}', '_blank')">
+              <div class="flex items-start justify-between mb-2">
+                <h4 class="font-bold text-slate-900">${scheme.name?.en || scheme.full_name || scheme.id}</h4>
+                ${(scheme.relevance_score || 0) > 2 ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Recommended</span>' : ''}
+              </div>
+              <p class="text-xs text-slate-600 mb-2">${scheme.full_name}</p>
+              <div class="text-sm text-slate-700 mb-3"><strong>💰 Benefit:</strong> ${scheme.benefit}</div>
+              <div class="text-xs text-slate-600 mb-2"><strong>✅ Eligibility:</strong> ${scheme.eligibility}</div>
+              <div class="text-xs text-slate-600 mb-2"><strong>📝 How to Apply:</strong> ${scheme.how_to_apply}</div>
+              <div class="text-xs text-slate-500"><strong>📄 Documents:</strong> ${scheme.documents?.join(', ') || 'Aadhaar, Bank Account'}</div>
+              <div class="mt-3 text-xs text-accent font-medium">Click to visit official website →</div>
+            </div>`;
+          });
+          
+          container.innerHTML = html;
+        }
+      } catch(e) {
+        document.getElementById('schemesContent').innerHTML = `<div class="text-red-500 col-span-2">Failed to load schemes: ${e.message}</div>`;
+      }
+    }
+
+    // ==================== CROP CALENDAR ====================
+    async function loadCalendarMonth(month) {
+      // Highlight active month button
+      document.querySelectorAll('.cal-month').forEach((btn, i) => {
+        btn.classList.remove('bg-accent', 'text-white');
+        if (i === month - 1) btn.classList.add('bg-accent', 'text-white');
+      });
+      
+      try {
+        const resp = await fetch(`/api/crop-calendar?month=${month}`);
+        const data = await resp.json();
+        
+        if (data.success) {
+          const container = document.getElementById('calendarContent');
+          let html = `
+            <div class="bg-gradient-to-r from-accent/10 to-emerald-50 rounded-xl p-5 border border-accent/20 mb-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="font-bold text-slate-900 text-lg">${data.calendar.month} — ${data.calendar.season}</h4>
+                  <p class="text-sm text-slate-600">Farming tasks for this month</p>
+                </div>
+              </div>
+            </div>`;
+          
+          // Tasks
+          if (data.calendar.tasks && data.calendar.tasks.length > 0) {
+            html += '<div class="space-y-2">';
+            data.calendar.tasks.forEach(task => {
+              html += `<div class="flex items-start gap-3 bg-white rounded-lg p-3 border border-slate-100 card-hover">
+                <div class="text-lg">${task.substring(0, 2)}</div>
+                <div class="text-sm text-slate-700 flex-1">${task.substring(2)}</div>
+              </div>`;
+            });
+            html += '</div>';
+          }
+          
+          // Alerts for this month
+          if (data.calendar.alerts && data.calendar.alerts.length > 0) {
+            html += '<div class="mt-4 space-y-2">';
+            data.calendar.alerts.forEach(alert => {
+              html += `<div class="bg-red-50 border-l-4 border-red-400 rounded-r-lg p-3 text-sm text-red-800">⚠️ ${alert}</div>`;
+            });
+            html += '</div>';
+          }
+          
+          container.innerHTML = html;
+        }
+      } catch(e) {
+        document.getElementById('calendarContent').innerHTML = `<div class="text-red-500">Failed: ${e.message}</div>`;
+      }
+    }
+
+    // ==================== SOIL HEALTH ====================
+    async function calculateFertilizer() {
+      const crop = document.getElementById('soilCrop').value;
+      if (!crop) { alert('Please select a crop'); return; }
+      
+      try {
+        const resp = await fetch(`/api/soil/fertilizer?crop=${crop}`);
+        const data = await resp.json();
+        
+        if (!data.success) {
+          document.getElementById('fertilizerResult').innerHTML = `<div class="text-red-500 text-sm p-3 bg-red-50 rounded-lg">⚠️ ${data.error || 'Could not get fertilizer recommendation for this crop'}</div>`;
+          return;
+        }
+        if (data.success) {
+          const r = data.recommendation;
+          document.getElementById('fertilizerResult').innerHTML = `
+            <div class="bg-white rounded-lg p-4 border border-green-200 space-y-3">
+              <h5 class="font-bold text-green-800">NPK Requirement (per hectare)</h5>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-blue-50 rounded-lg p-2"><div class="text-xs text-slate-500">Nitrogen</div><div class="font-bold text-blue-700">${r.npk_kg_per_hectare.N} kg</div></div>
+                <div class="bg-orange-50 rounded-lg p-2"><div class="text-xs text-slate-500">Phosphorus</div><div class="font-bold text-orange-700">${r.npk_kg_per_hectare.P} kg</div></div>
+                <div class="bg-pink-50 rounded-lg p-2"><div class="text-xs text-slate-500">Potassium</div><div class="font-bold text-pink-700">${r.npk_kg_per_hectare.K} kg</div></div>
+              </div>
+              <h5 class="font-bold text-green-800">Fertilizer Quantities</h5>
+              <div class="text-sm space-y-1">
+                <div>🧪 <strong>Urea:</strong> ${r.fertilizer_quantities.urea_kg} kg/ha</div>
+                <div>🧪 <strong>DAP:</strong> ${r.fertilizer_quantities.dap_kg} kg/ha</div>
+                <div>🧪 <strong>MOP:</strong> ${r.fertilizer_quantities.mop_kg} kg/ha</div>
+              </div>
+              <div class="bg-green-50 rounded-lg p-3 text-sm">
+                <strong>📋 Schedule:</strong> ${r.application_schedule}
+              </div>
+              <div class="bg-lime-50 rounded-lg p-3 text-sm">
+                <strong>🌿 Organic Option:</strong> ${r.organic_alternative}
+              </div>
+            </div>`;
+        }
+      } catch(e) {
+        document.getElementById('fertilizerResult').innerHTML = `<div class="text-red-500 text-sm">${e.message}</div>`;
+      }
+    }
+
+    async function analyzeSoilSymptoms() {
+      const symptoms = document.getElementById('soilSymptoms').value.trim();
+      if (!symptoms) { alert('Please describe your soil problem'); return; }
+      
+      try {
+        const resp = await fetch('/api/soil/analyze', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({symptoms}) });
+        const data = await resp.json();
+        
+        if (!data.success) {
+          document.getElementById('soilAnalysisResult').innerHTML = `<div class="text-red-500 text-sm p-3 bg-red-50 rounded-lg">⚠️ ${data.error || 'Could not analyze symptoms'}</div>`;
+          return;
+        }
+        if (data.success) {
+          const a = data.analysis;
+          let html = '<div class="bg-white rounded-lg p-4 border border-amber-200 space-y-3">';
+          html += '<h5 class="font-bold text-amber-800">🔍 Detected Issues</h5><ul class="list-disc list-inside text-sm space-y-1">';
+          a.detected_issues.forEach(i => { html += `<li class="text-red-700">${i}</li>`; });
+          html += '</ul>';
+          html += '<h5 class="font-bold text-green-800">✅ Recommendations</h5><ul class="list-disc list-inside text-sm space-y-1">';
+          a.recommendations.forEach(r => { html += `<li class="text-green-700">${r}</li>`; });
+          html += '</ul>';
+          html += '<h5 class="font-bold text-blue-800">💡 General Advice</h5><ul class="list-disc list-inside text-sm space-y-1">';
+          a.general_advice.forEach(g => { html += `<li class="text-blue-700">${g}</li>`; });
+          html += '</ul></div>';
+          document.getElementById('soilAnalysisResult').innerHTML = html;
+        }
+      } catch(e) {
+        document.getElementById('soilAnalysisResult').innerHTML = `<div class="text-red-500 text-sm">${e.message}</div>`;
+      }
+    }
+
+    // ==================== FARM ECONOMICS ====================
+    async function calculateEconomics() {
+      const crop = document.getElementById('econCrop').value;
+      const area = document.getElementById('econArea').value;
+      if (!crop) { alert('Please select a crop'); return; }
+      
+      try {
+        const resp = await fetch(`/api/economics/calculate?crop=${crop}&area=${area}`);
+        const data = await resp.json();
+        
+        if (!data.success) {
+          document.getElementById('economicsResult').innerHTML = `<div class="text-center py-8 text-red-500">⚠️ ${data.error || 'Could not calculate economics for this crop'}</div>`;
+          return;
+        }
+        if (data.success) {
+          const e = data.economics;
+          const profitColor = e.profitability.net_profit >= 0 ? 'text-green-700' : 'text-red-700';
+          const profitBg = e.profitability.net_profit >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+          
+          document.getElementById('economicsResult').innerHTML = `
+            <div class="${profitBg} rounded-xl p-6 border fade-in-up">
+              <h4 class="font-bold text-slate-900 text-lg mb-4">${cropNamesCache[crop]?.name || crop.charAt(0).toUpperCase() + crop.slice(1)} — ${e.area_hectares} Hectare (${e.area_acres} Acres)</h4>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+                  <div class="text-xs text-slate-500">Total Cost</div>
+                  <div class="text-lg font-bold text-red-600">₹${e.cost_breakdown.total_input_cost.toLocaleString()}</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+                  <div class="text-xs text-slate-500">Expected Yield</div>
+                  <div class="text-lg font-bold text-blue-600">${e.yield_estimate.total_quintals} qtl</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 text-center shadow-sm">
+                  <div class="text-xs text-slate-500">Revenue (at MSP)</div>
+                  <div class="text-lg font-bold text-green-600">₹${e.revenue.total_revenue.toLocaleString()}</div>
+                </div>
+                <div class="bg-white rounded-lg p-3 text-center shadow-sm pulse-glow">
+                  <div class="text-xs text-slate-500">Net Profit</div>
+                  <div class="text-lg font-bold ${profitColor}">₹${e.profitability.net_profit.toLocaleString()}</div>
+                  <div class="text-xs ${profitColor}">ROI: ${e.profitability.roi_percentage}%</div>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg p-3 text-sm">
+                <strong>💡 Advice:</strong> ${e.recommendation}
+              </div>
+              <div class="grid grid-cols-3 gap-3 mt-3 text-xs text-slate-600">
+                <div>MSP: ₹${e.revenue.msp_per_quintal}/qtl</div>
+                <div>Cost/qtl: ₹${e.cost_breakdown.cost_per_quintal}</div>
+                <div>Breakeven: ₹${e.profitability.breakeven_price}/qtl</div>
+              </div>
+            </div>`;
+        }
+      } catch(e) {
+        document.getElementById('economicsResult').innerHTML = `<div class="text-red-500">${e.message}</div>`;
+      }
+    }
+
+    async function compareCrops() {
+      try {
+        const resp = await fetch('/api/economics/compare?crops=wheat,rice,cotton,soybean,potato');
+        const data = await resp.json();
+        
+        if (data.success && data.comparisons) {
+          let html = '<div class="bg-white rounded-xl border border-slate-200 overflow-hidden overflow-x-auto"><table class="w-full text-sm min-w-[500px]"><thead class="bg-slate-50"><tr><th class="px-4 py-2 text-left">Crop</th><th class="px-4 py-2 text-right">Cost</th><th class="px-4 py-2 text-right">Revenue</th><th class="px-4 py-2 text-right">Profit</th><th class="px-4 py-2 text-right">ROI</th></tr></thead><tbody>';
+          data.comparisons.forEach((c, i) => {
+            const cls = i === 0 ? 'bg-green-50 font-bold' : (i % 2 === 0 ? '' : 'bg-slate-50');
+            html += `<tr class="${cls}">
+              <td class="px-4 py-2">${i === 0 ? '🏆 ' : ''}${cropNamesCache[c.crop]?.name || c.crop.charAt(0).toUpperCase() + c.crop.slice(1)}</td>
+              <td class="px-4 py-2 text-right">₹${c.cost_breakdown.total_input_cost.toLocaleString()}</td>
+              <td class="px-4 py-2 text-right">₹${c.revenue.total_revenue.toLocaleString()}</td>
+              <td class="px-4 py-2 text-right ${c.profitability.net_profit >= 0 ? 'text-green-600' : 'text-red-600'}">₹${c.profitability.net_profit.toLocaleString()}</td>
+              <td class="px-4 py-2 text-right font-bold">${c.profitability.roi_percentage}%</td>
+            </tr>`;
+          });
+          html += '</tbody></table></div>';
+          html += `<div class="mt-3 bg-green-50 rounded-lg p-3 text-sm"><strong>🏆 Best Crop:</strong> ${cropNamesCache[data.best_crop]?.name || data.best_crop.charAt(0).toUpperCase() + data.best_crop.slice(1)} with ${data.best_roi}% ROI</div>`;
+          document.getElementById('cropCompareResult').innerHTML = html;
+        }
+      } catch(e) {
+        document.getElementById('cropCompareResult').innerHTML = `<div class="text-red-500">${e.message}</div>`;
+      }
+    }
+
+    // ==================== ALERTS ====================
+    async function loadAlerts() {
+      try {
+        const resp = await fetch(`/api/alerts?lang=${currentLang}`);
+        const data = await resp.json();
+        
+        if (data.success && data.alerts) {
+          document.getElementById('alertCount').textContent = data.alerts.length;
+          
+          // Banner alerts
+          const bannerHtml = data.alerts.slice(0, 3).map(a => 
+            `<span class="whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium ${a.severity === 'critical' ? 'bg-red-100 text-red-700' : a.severity === 'warning' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${a.title}</span>`
+          ).join('');
+          document.getElementById('alertsContent').innerHTML = bannerHtml;
+          
+          // Full alerts
+          let html = '';
+          data.alerts.forEach(alert => {
+            html += `<div class="bg-white rounded-xl p-5 border border-slate-200 card-hover alert-${alert.severity}">
+              <div class="flex items-start justify-between mb-2">
+                <h4 class="font-bold text-slate-900">${alert.title}</h4>
+                <span class="text-xs px-2 py-0.5 rounded-full font-medium ${alert.severity === 'critical' ? 'bg-red-100 text-red-700' : alert.severity === 'warning' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'}">${alert.severity.toUpperCase()}</span>
+              </div>
+              <p class="text-sm text-slate-600 mb-2">${alert.message}</p>
+              ${alert.crops_affected ? `<div class="text-xs text-slate-500">Crops: ${alert.crops_affected.join(', ')}</div>` : ''}
+              ${alert.regions ? `<div class="text-xs text-slate-500">Regions: ${alert.regions.join(', ')}</div>` : ''}
+            </div>`;
+          });
+          document.getElementById('alertsFullContent').innerHTML = html;
+        }
+      } catch(e) {
+        document.getElementById('alertsFullContent').innerHTML = `<div class="text-red-500">${e.message}</div>`;
+      }
+    }
+
+    // ==================== INITIALIZATION ====================
+    async function loadCropDropdowns() {
+      try {
+        const resp = await fetch(`/api/crop-names?lang=${currentLang}`);
+        const data = await resp.json();
+        if (!data.success) return;
+        cropNamesCache = data.crops;
+
+        // Define which crops each dropdown supports
+        const dropdownCrops = {
+          'mandiCommodity': ['wheat','rice','onion','potato','tomato','soybean','cotton','mustard','chana','maize','bajra','sugarcane','turmeric','garlic','chilli'],
+          'soilCrop': ['wheat','rice','maize','cotton','potato','tomato','onion','mustard','chana','soybean','sugarcane'],
+          'econCrop': ['wheat','rice','maize','cotton','soybean','mustard','chana','potato','onion','tomato','sugarcane','bajra','turmeric','garlic'],
+        };
+
+        for (const [selId, cropKeys] of Object.entries(dropdownCrops)) {
+          const sel = document.getElementById(selId);
+          if (!sel) continue;
+          const currentVal = sel.value; // preserve selection
+          const placeholder = sel.querySelector('option[value=""]');
+          sel.innerHTML = '';
+          // Add placeholder back
+          const ph = document.createElement('option');
+          ph.value = '';
+          ph.textContent = selId === 'econCrop' ? L('chooseCrop') : L('selectCrop');
+          sel.appendChild(ph);
+
+          cropKeys.forEach(key => {
+            const info = cropNamesCache[key];
+            if (!info) return;
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = `${info.emoji} ${info.name}`;
+            sel.appendChild(opt);
+          });
+          if (currentVal) sel.value = currentVal;
+        }
+      } catch(e) { console.error('Failed to load crop names:', e); }
+    }
+
+    function updateUILabels() {
+      // Tab buttons
+      const tabLabels = {mandi: 'mandiPrices', schemes: 'govtSchemes', calendar: 'cropCalendar', soil: 'soilHealth', economics: 'farmEcon', alerts: 'alerts'};
+      for (const [tab, labelKey] of Object.entries(tabLabels)) {
+        const btn = document.getElementById('tab-' + tab);
+        if (btn) btn.textContent = L(labelKey);
+      }
+      // Quick stats labels — use data-label attributes for robust matching
+      document.querySelectorAll('[data-label]').forEach(el => {
+        const key = el.getAttribute('data-label');
+        if (key) el.textContent = L(key).toUpperCase();
+      });
+    }
+
+    async function initDashboard() {
+      // Sync lang selector
+      const langSel = document.getElementById('dashLang');
+      if (langSel) langSel.value = currentLang;
+
+      // Load crop dropdowns in selected language
+      await loadCropDropdowns();
+      updateUILabels();
+
+      // Load season info
+      try {
+        const resp = await fetch('/api/crop-calendar/season');
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById('currentSeason').textContent = data.season.season.charAt(0).toUpperCase() + data.season.season.slice(1);
+          document.getElementById('seasonMonth').textContent = data.season.current_month;
+        }
+      } catch(e) {}
+      
+      // Load MSP info
+      try {
+        const resp = await fetch('/api/mandi/msp');
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById('mspSeason').textContent = data.msp_data.season;
+          document.getElementById('mspYear').textContent = data.msp_data.year;
+        }
+      } catch(e) {}
+      
+      // Load weather — detect user location, fallback to Delhi
+      try {
+        let weatherLoc = 'Delhi,IN';
+        if (navigator.geolocation) {
+          try {
+            const pos = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {timeout: 5000}));
+            weatherLoc = `${pos.coords.latitude},${pos.coords.longitude}`;
+          } catch(ge) { /* geolocation denied or timeout — use default */ }
+        }
+        const resp = await fetch(`/api/weather?location=${encodeURIComponent(weatherLoc)}`);
+        const data = await resp.json();
+        if (data.success) {
+          document.getElementById('dashWeatherTemp').textContent = data.current.temperature + '°C';
+          document.getElementById('dashWeatherCity').textContent = data.current.city;
+        }
+      } catch(e) {}
+      
+      // Load alerts (with language)
+      loadAlerts();
+    }
+    
+    function changeDashLanguage(lang) {
+      currentLang = lang;
+      // Sync with global language system
+      localStorage.setItem('selectedLanguage', lang);
+      fetch(`/change-language/${lang}`, { headers: {'X-Requested-With': 'XMLHttpRequest'} });
+      // Re-render everything in new language
+      loadCropDropdowns();
+      updateUILabels();
+      loadAlerts(); // reload alerts in new language
+      // Reload active tab data
+      const activeTab = document.querySelector('.tab-active');
+      if (activeTab) {
+        const tabName = activeTab.id.replace('tab-', '');
+        if (tabName === 'schemes') loadSchemes();
+        if (tabName === 'calendar') loadCalendarMonth(new Date().getMonth() + 1);
+      }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
+</body>
+</html>

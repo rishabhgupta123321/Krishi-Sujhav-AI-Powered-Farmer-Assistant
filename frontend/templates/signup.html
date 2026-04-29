@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ translations.signup_title if translations and translations.signup_title else 'Farmer Assistant Sign Up' }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            accent: '#0ea5a4'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-8 px-4">
+  <div class="max-w-md mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <div class="mx-auto h-16 w-16 bg-accent rounded-full flex items-center justify-center mb-4">
+        <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+      </div>
+      <h2 class="text-3xl font-bold text-slate-900">{{ translations.signup_title if translations and translations.signup_title else 'Join Farmer Assistant' }}</h2>
+      <p class="mt-2 text-sm text-slate-600">{{ translations.signup_subtitle if translations and translations.signup_subtitle else 'Create your account to start growing smarter' }}</p>
+    </div>
+
+    <!-- Signup Form -->
+    <div class="bg-white rounded-xl shadow-lg p-8">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="mb-4 p-3 rounded-lg {% if category == 'error' %}bg-red-100 border border-red-400 text-red-700{% elif category == 'success' %}bg-green-100 border border-green-400 text-green-700{% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+      
+      <form class="space-y-6" action="{{ url_for('signup') }}" method="POST" id="signupForm">
+        <!-- Language Preference -->
+        <div>
+          <label for="languagePreference" class="block text-sm font-medium text-slate-700 mb-2" data-i18n="language_preference">Language Preference</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+              </svg>
+            </div>
+            <select id="languagePreference" name="languagePreference" required 
+                    class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent bg-white"
+                    onchange="changeGlobalLanguage(this.value)">
+              <option value="" data-i18n="select_language">Select your preferred language</option>
+              <option value="en">English</option>
+              <option value="hi">Hindi (हिन्दी)</option>
+              <option value="mr">Marathi (मराठी)</option>
+              <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+              <option value="ml">Malayalam (മലയാളം)</option>
+              <option value="ta">Tamil (தமிழ்)</option>
+              <option value="te">Telugu (తెలుగు)</option>
+              <option value="kn">Kannada (ಕನ್ನಡ)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Full Name -->
+        <div>
+          <label for="fullName" class="block text-sm font-medium text-slate-700 mb-2" data-i18n="full_name">Full Name</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </div>
+            <input id="fullName" name="fullName" type="text" autocomplete="name" required 
+                   class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent" 
+                   placeholder="Enter your full name">
+          </div>
+        </div>
+
+        <!-- Email Address -->
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700 mb-2" data-i18n="email">Email Address</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+              </svg>
+            </div>
+            <input id="email" name="email" type="email" autocomplete="email" required 
+                   class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent" 
+                   placeholder="farmer@gmail.com">
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div>
+          <label for="location" class="block text-sm font-medium text-slate-700 mb-2" data-i18n="location">Location (City/Village)</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </div>
+            <input id="location" name="location" type="text" autocomplete="address-level2" 
+                   class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent" 
+                   placeholder="Enter your city or village">
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div>
+          <label for="password" class="block text-sm font-medium text-slate-700 mb-2" data-i18n="password">Password</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+            </div>
+            <input id="password" name="password" type="password" autocomplete="new-password" required 
+                   class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent" 
+                   placeholder="Create a strong password">
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div>
+          <label for="confirmPassword" class="block text-sm font-medium text-slate-700 mb-2" data-i18n="confirm_password">Re-type Password</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required 
+                   class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent" 
+                   placeholder="Confirm your password">
+          </div>
+        </div>
+
+        
+        <!-- Terms and Conditions -->
+        <div class="flex items-center">
+          <input id="terms" name="terms" type="checkbox" required 
+                 class="h-4 w-4 text-accent focus:ring-accent border-slate-300 rounded">
+          <label for="terms" class="ml-2 block text-sm text-slate-700">
+            <span data-i18n="terms_agree">I agree to the 
+            <a href="#" id="openTermsModal" class="font-medium text-accent hover:text-accent/80">Terms of Service</a> 
+            and 
+            <a href="#" id="openPrivacyModal" class="font-medium text-accent hover:text-accent/80">Privacy Policy</a></span>
+          </label>
+        </div>
+
+        <!-- Newsletter Subscription -->
+        <div class="flex items-center">
+          <input id="newsletter" name="newsletter" type="checkbox" 
+                 class="h-4 w-4 text-accent focus:ring-accent border-slate-300 rounded">
+          <label for="newsletter" class="ml-2 block text-sm text-slate-700" data-i18n="newsletter">
+            Subscribe to farming tips and updates
+          </label>
+        </div>
+
+        <!-- Submit Button -->
+        <div>
+          <button type="submit" 
+                  class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-accent hover:bg-accent/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-colors">
+            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+              <svg class="h-5 w-5 text-accent/80 group-hover:text-accent/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            </span>
+            <span data-i18n="create_account">Create My Account</span>
+          </button>
+        </div>
+      </form>
+
+      <!-- Sign in link -->
+      <div class="mt-6 text-center">
+        <p class="text-sm text-slate-600">
+          <span data-i18n="already_account">Already have an account?</span> 
+          <a href="{{ url_for('login') }}" class="font-medium text-accent hover:text-accent/80" data-i18n="sign_in_here">
+            Sign in here
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center text-xs text-slate-500 mt-8">
+      <p>&copy; 2025 Farmer Assistant. Empowering farmers worldwide.</p>
+    </div>
+  </div>
+
+  <!-- Terms and Conditions Modal -->
+  <div id="termsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
+      <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="text-xl font-bold text-slate-900">Terms of Service & Privacy Policy</h3>
+        <button id="closeTermsModal" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-96">
+        <div class="prose prose-sm max-w-none">
+          <h4 class="font-semibold text-lg mb-3">Terms of Service</h4>
+          <p class="mb-4">Welcome to Farmer Assistant. By using our service, you agree to these terms:</p>
+          <ul class="list-disc pl-5 mb-4 space-y-2">
+            <li>You must provide accurate information during registration</li>
+            <li>You are responsible for maintaining the security of your account</li>
+            <li>You agree to use the service only for legitimate farming purposes</li>
+            <li>You will not misuse our AI recommendations for harmful purposes</li>
+            <li>We reserve the right to suspend accounts that violate these terms</li>
+          </ul>
+          
+          <h4 class="font-semibold text-lg mb-3 mt-6">Privacy Policy</h4>
+          <p class="mb-4">We respect your privacy and are committed to protecting your personal data:</p>
+          <ul class="list-disc pl-5 mb-4 space-y-2">
+            <li><strong>Data Collection:</strong> We collect only necessary information for providing farming assistance</li>
+            <li><strong>Data Usage:</strong> Your data is used to improve our AI recommendations and user experience</li>
+            <li><strong>Data Sharing:</strong> We never sell your personal information to third parties</li>
+            <li><strong>Data Security:</strong> We use industry-standard encryption to protect your data</li>
+            <li><strong>Data Retention:</strong> You can request data deletion at any time</li>
+            <li><strong>Cookies:</strong> We use essential cookies for functionality and analytics</li>
+          </ul>
+          
+          <h4 class="font-semibold text-lg mb-3 mt-6">AI Disclaimer</h4>
+          <p class="mb-4">Our AI farming assistant provides suggestions based on general agricultural knowledge:</p>
+          <ul class="list-disc pl-5 mb-4 space-y-2">
+            <li>Recommendations are for informational purposes only</li>
+            <li>Always consult local agricultural experts for critical decisions</li>
+            <li>We are not liable for crop losses or farming failures</li>
+            <li>Local conditions may require different approaches than suggested</li>
+          </ul>
+          
+          <p class="text-sm text-slate-600 mt-6">
+            Last updated: September 2025. We may update these terms periodically. 
+            Continued use constitutes acceptance of updated terms.
+          </p>
+        </div>
+      </div>
+      <div class="p-6 border-t border-slate-200 flex justify-end gap-3">
+        <button id="declineTerms" class="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50">
+          Decline
+        </button>
+        <button id="acceptTerms" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90">
+          Accept & Continue
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- External JavaScript Files -->
+  <script src="{{ url_for('static', filename='js/language.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/signup.js') }}"></script>
+  
+  <!-- Initialize page functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize signup page functionality
+      initializeSignupPage();
+      
+      // Initialize language selector
+      initializeLanguageSelector();
+    });
+  </script>
+</body>
+</html>

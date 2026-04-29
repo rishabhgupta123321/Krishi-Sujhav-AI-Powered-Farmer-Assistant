@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ translations.site_title if translations and translations.site_title else 'Krishi Sujhav' }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            accent: '#0ea5a4'
+          },
+          animation: {
+            'bounce-slow': 'bounce 3s infinite'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .animate-shimmer {
+      animation: shimmer 2s infinite;
+    }
+    
+    /* Smooth popup animation */
+    .weather-popup-enter {
+      animation: popupEnter 0.3s ease-out;
+    }
+    
+    @keyframes popupEnter {
+      from {
+        opacity: 0;
+        transform: translateY(-10px) translateX(-50%);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) translateX(-50%);
+      }
+    }
+    
+    /* Pulsing glow effect */
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(14, 165, 164, 0.4); }
+    }
+    
+    /* Voice System Animations */
+    .typing-indicator .dot {
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: #10b981;
+      margin: 0 1px;
+      animation: typing 1.4s infinite;
+    }
+    
+    .typing-indicator .dot:nth-child(1) { animation-delay: 0s; }
+    .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1); }
+    }
+    
+    /* Voice waveform animation */
+    .voice-waveform .bar {
+      animation: wave 1.5s ease-in-out infinite;
+    }
+    
+    .voice-waveform .bar:nth-child(1) { animation-delay: 0s; }
+    .voice-waveform .bar:nth-child(2) { animation-delay: 0.1s; }
+    .voice-waveform .bar:nth-child(3) { animation-delay: 0.2s; }
+    .voice-waveform .bar:nth-child(4) { animation-delay: 0.3s; }
+    .voice-waveform .bar:nth-child(5) { animation-delay: 0.4s; }
+    
+    @keyframes wave {
+      0%, 100% { height: 20%; }
+      50% { height: 80%; }
+    }
+    
+    /* Voice panel animations */
+    .voice-panel {
+      transition: all 0.3s ease;
+    }
+    
+    .voice-btn {
+      transition: all 0.2s ease;
+      transform: scale(1);
+    }
+    
+    .voice-btn:hover {
+      transform: scale(1.1);
+    }
+    
+    .voice-btn:active {
+      transform: scale(0.95);
+    }
+    
+    /* Camera modal animations */
+    .camera-modal-enter {
+      animation: modalEnter 0.3s ease-out;
+    }
+    
+    @keyframes modalEnter {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% { box-shadow: 0 0 30px rgba(14, 165, 164, 0.6); }
+    }
+    
+    .animate-glow {
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    /* Profile Dropdown */
+    .profile-dropdown {
+      transform: scale(0.95);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: top right;
+    }
+    .profile-dropdown.active {
+      transform: scale(1);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Sidebar Resize Handle */
+    .sidebar-resize-handle {
+      position: absolute;
+      right: -3px;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      cursor: col-resize;
+      z-index: 20;
+      transition: background 0.2s;
+    }
+    .sidebar-resize-handle:hover,
+    .sidebar-resize-handle.active {
+      background: linear-gradient(to right, transparent, rgba(14,165,164,0.4), transparent);
+    }
+    .sidebar-resize-handle::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 3px;
+      height: 40px;
+      border-radius: 2px;
+      background: rgba(14,165,164,0.5);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .sidebar-resize-handle:hover::after {
+      opacity: 1;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(14,165,164,0.25);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(14,165,164,0.45);
+    }
+
+    /* No-select during resize */
+    .no-select {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Farmer theme subtle pattern */
+    .farmer-bg {
+      background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 40%, #fffbeb 100%);
+    }
+
+    /* ========== RESPONSIVE / MOBILE ========== */
+    @media (max-width: 767px) {
+      /* Sidebar: hidden by default on mobile, overlay when opened */
+      #chatHistorySidebar {
+        position: fixed !important;
+        left: 0; top: 0; bottom: 0;
+        z-index: 50;
+        width: 280px !important;
+        min-width: 0 !important;
+        max-width: 85vw !important;
+        transform: translateX(-100%);
+        box-shadow: 4px 0 25px rgba(0,0,0,0.15);
+      }
+      #chatHistorySidebar.mobile-open {
+        transform: translateX(0);
+      }
+      /* Backdrop when sidebar is open on mobile */
+      .mobile-sidebar-backdrop {
+        display: none;
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 45;
+      }
+      .mobile-sidebar-backdrop.active { display: block; }
+      /* Show open button on mobile */
+      #openSidebarBtn { display: flex !important; }
+      /* Hide resize handle on mobile */
+      .sidebar-resize-handle { display: none !important; }
+      /* Header adjustments */
+      .mobile-hide { display: none !important; }
+      /* Weather circle smaller on mobile */
+      #weatherCircle { width: 40px !important; height: 40px !important; font-size: 11px !important; }
+      #weatherCircle .w-5 { width: 12px; height: 12px; }
+      /* Chat padding reduced */
+      #chatMessages { padding: 12px !important; }
+      /* Chat input: fewer icons, tighter gaps */
+      #chatForm { gap: 6px !important; }
+      #chatForm .flex.items-center.gap-2 { gap: 2px !important; }
+      /* Profile dropdown responsive */
+      #profileDropdown { width: calc(100vw - 2rem) !important; max-width: 320px; right: -8px; }
+      /* Weather tooltip responsive */
+      .group .w-64 { width: calc(100vw - 3rem) !important; max-width: 256px; left: auto !important; right: -60px; transform: none !important; }
+    }
+
+    @media (max-width: 380px) {
+      /* Extra small phones */
+      #cameraButton { display: none !important; }
+      #chatForm textarea { padding: 8px 12px !important; font-size: 14px; }
+    }
+  </style>
+</head>
+<body class="h-screen bg-gradient-to-br from-emerald-50/30 via-slate-50 to-amber-50/20 text-slate-900 antialiased">
+  <div class="flex h-screen">
+
+    <!-- Open Sidebar Button (Floating, appears when sidebar is closed) -->
+    <button id="openSidebarBtn" class="fixed left-4 top-20 z-30 bg-gradient-to-r from-accent to-emerald-600 text-white p-3 rounded-full hover:shadow-2xl transition-all duration-300 shadow-xl hidden hover:scale-110 md:hidden">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="mobileSidebarBackdrop" class="mobile-sidebar-backdrop" onclick="closeSidebarMobile()"></div>
+
+    <!-- Left Sidebar: Chat History (Collapsible) -->
+    <aside id="chatHistorySidebar" class="w-72 bg-gradient-to-b from-white to-slate-50/80 border-r border-slate-200/60 flex flex-col transition-all duration-300 relative hidden md:flex" style="min-width:200px;max-width:500px;">
+      <!-- Resize Handle -->
+      <div id="sidebarResizeHandle" class="sidebar-resize-handle"></div>
+      
+      <header class="p-4 border-b border-slate-200/80 font-semibold flex items-center justify-between bg-white/60 backdrop-blur-sm">
+        <span>{{ translations.chat_history if translations and translations.chat_history else 'Chat History' }}</span>
+        <div class="flex items-center gap-2">
+          <a href="/dashboard" class="text-green-600 hover:text-green-700 p-1.5 rounded-lg hover:bg-green-50 transition-colors" title="Farmer Dashboard">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          </a>
+          <button id="newChatBtn" class="text-accent hover:text-accent/90 p-1.5 rounded-lg hover:bg-accent/10 transition-colors" title="{{ translations.new_chat if translations and translations.new_chat else 'New Chat' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+          </button>
+          <button id="closeSidebarBtn" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors" title="{{ translations.close_sidebar if translations and translations.close_sidebar else 'Close Sidebar' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+      
+      <!-- Chat History List -->
+      <div class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar" id="chatHistoryList">
+        <div class="text-sm text-slate-400 p-3">{{ translations.no_previous_chats if translations and translations.no_previous_chats else 'No previous chats' }}</div>
+      </div>
+      
+      <footer class="border-t border-slate-200/60 text-sm bg-gradient-to-t from-slate-50/80 to-white/60 backdrop-blur-sm">
+        <div id="footerContent">
+          {% if user %}
+            <div class="p-3">
+              <!-- User Card -->
+              <div class="flex items-center gap-3 p-2.5 rounded-xl bg-gradient-to-r from-accent/8 to-emerald-50/80 mb-2">
+                <div class="w-10 h-10 bg-gradient-to-br from-accent to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0">
+                  {{ user.fullName[0].upper() }}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="font-semibold text-slate-800 truncate text-sm leading-tight">{{ user.fullName }}</p>
+                  <p class="text-[11px] text-slate-500 truncate leading-tight mt-0.5">🌾 {{ user.email if user.email else 'Farmer' }}</p>
+                </div>
+              </div>
+              <!-- Quick Actions Row -->
+              <div class="flex gap-1.5">
+                <a href="/dashboard" class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent text-xs font-medium transition-colors" title="Dashboard">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                  <span id="sidebarDashboardLabel" data-i18n="farmer_dashboard">Dashboard</span>
+                </a>
+                <button onclick="if(confirm('Are you sure?')) window.location.href='{{ url_for('logout') }}'" class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium transition-colors" title="Logout">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                  <span id="logoutBtn" data-i18n="logout">Logout</span>
+                </button>
+              </div>
+            </div>
+          {% else %}
+            <div class="p-3 space-y-2">
+              <p class="font-medium text-slate-600 text-center text-xs">{{ translations.welcome_guest if translations and translations.welcome_guest else 'Welcome, Guest!' }}</p>
+              <div class="flex gap-2">
+                <a href="{{ url_for('login') }}" class="flex-1 px-3 py-2 text-center bg-gradient-to-r from-accent to-emerald-600 text-white rounded-lg hover:shadow-md text-xs font-medium transition-all">{{ translations.login_button if translations and translations.login_button else 'Login' }}</a>
+                <a href="{{ url_for('signup') }}" class="flex-1 px-3 py-2 text-center border border-accent text-accent rounded-lg hover:bg-accent/5 text-xs font-medium transition-colors">{{ translations.signup_button if translations and translations.signup_button else 'Sign Up' }}</a>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </footer>
+    </aside>
+
+    <!-- Right Chat Section -->
+    <main class="flex-1 flex flex-col">
+      <!-- Chat Header with Weather -->
+      <header class="border-b border-slate-200/60 p-3 md:p-4 bg-white/80 backdrop-blur-sm flex items-center justify-between">
+        <!-- Left: Title and Live Weather -->
+        <div class="flex items-center gap-2 md:gap-4 min-w-0">
+          <div class="h-8 w-8 md:h-10 md:w-10 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="h-4 w-4 md:h-5 md:w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <h1 class="font-semibold text-slate-900 text-sm md:text-base truncate">{{ translations.chat_title if translations and translations.chat_title else 'Krishi Sujhav' }}</h1>
+            <p class="text-xs md:text-sm text-slate-500 hidden sm:block">{{ translations.chat_subtitle if translations and translations.chat_subtitle else 'AI-powered farming guidance' }}</p>
+          </div>
+          
+          <!-- Circular Weather Widget -->
+          <div class="relative group ml-2 md:ml-6 flex-shrink-0">
+            <!-- Weather Circle (Shows only temperature) - Click to open full weather page -->
+            <div id="weatherCircle" onclick="openWeatherPage()" class="w-16 h-16 bg-gradient-to-br from-sky-400 to-blue-500 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 relative overflow-hidden">
+              <!-- Animated background -->
+              <div class="absolute inset-0 bg-white/20 rounded-full animate-pulse"></div>
+              <div id="weatherIconCircle" class="w-8 h-8 mb-0.5 relative z-10">
+                <svg class="w-full h-full text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                </svg>
+              </div>
+              <span id="weatherTempCircle" class="text-white font-bold text-sm relative z-10">--°</span>
+            </div>
+            
+            <!-- Simple Weather Tooltip (Shows on hover) -->
+            <div class="absolute left-1/2 transform -translate-x-1/2 top-20 w-64 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 group-hover:translate-y-0 translate-y-2 pointer-events-none">
+              <!-- Arrow pointer -->
+              <div class="absolute -top-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-l border-t border-slate-200 rotate-45"></div>
+              
+              <div class="relative">
+                <!-- Header -->
+                <div class="mb-3 pb-2 border-b border-slate-100">
+                  <h3 id="weatherCityPopup" class="font-bold text-slate-900">{{ translations.loading if translations and translations.loading else 'Loading...' }}</h3>
+                  <p id="weatherConditionPopup" class="text-xs text-slate-600 capitalize">--</p>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="space-y-2 text-sm">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-600 weather-label-temp">🌡️ {{ translations.temperature if translations and translations.temperature else 'Temperature' }}</span>
+                    <span id="weatherTempPopup" class="font-semibold text-orange-600">--°C</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-600 weather-label-humidity">💧 {{ translations.humidity if translations and translations.humidity else 'Humidity' }}</span>
+                    <span id="weatherHumidityPopup" class="font-semibold text-blue-600">--%</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-600 weather-label-wind">💨 {{ translations.wind_speed if translations and translations.wind_speed else 'Wind Speed' }}</span>
+                    <span id="weatherWindPopup" class="font-semibold text-teal-600">-- m/s</span>
+                  </div>
+                </div>
+                
+                <!-- Click for more -->
+                <div class="mt-3 pt-2 border-t border-slate-100 text-center text-xs text-blue-600 font-medium">
+                  {{ translations.view_weather if translations and translations.view_weather else 'Click for detailed forecast' }} →
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right: Language and User Profile -->
+        <div class="flex items-center gap-3">
+          <!-- Hidden userGreeting for language system compatibility -->
+          <span class="hidden" id="userGreeting">
+            {% if user %}Welcome, {{ user.fullName.split(' ')[0] }}!{% else %}Welcome! Please login to chat{% endif %}
+          </span>
+          
+          <!-- Language Selector -->
+          <div class="relative">
+            <select id="languageSelector" onchange="changeGlobalLanguage(this.value)" class="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white/80 backdrop-blur focus:outline-none focus:ring-2 focus:ring-accent/40 cursor-pointer">
+              <option value="en" {{ 'selected' if lang == 'en' else '' }}>🌐 English</option>
+              <option value="hi" {{ 'selected' if lang == 'hi' else '' }}>🇮🇳 हिन्दी</option>
+              <option value="mr" {{ 'selected' if lang == 'mr' else '' }}>🇮🇳 मराठी</option>
+              <option value="pa" {{ 'selected' if lang == 'pa' else '' }}>🇮🇳 ਪੰਜਾਬੀ</option>
+              <option value="ml" {{ 'selected' if lang == 'ml' else '' }}>🇮🇳 മലയാളം</option>
+              <option value="ta" {{ 'selected' if lang == 'ta' else '' }}>🇮🇳 தமிழ்</option>
+              <option value="te" {{ 'selected' if lang == 'te' else '' }}>🇮🇳 తెలుగు</option>
+              <option value="kn" {{ 'selected' if lang == 'kn' else '' }}>🇮🇳 ಕನ್ನಡ</option>
+            </select>
+          </div>
+          
+          <!-- User Profile Dropdown -->
+          <div class="relative" id="profileContainer">
+            {% if user %}
+            <button id="profileBtn" onclick="toggleProfileDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-all duration-200 group">
+              <div class="w-9 h-9 bg-gradient-to-br from-accent to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md group-hover:shadow-lg transition-shadow">
+                {{ user.fullName[0].upper() }}
+              </div>
+              <span class="text-sm font-medium text-slate-700 hidden sm:inline">{{ user.fullName.split(' ')[0] }}</span>
+              <svg class="w-4 h-4 text-slate-400 transition-transform duration-200" id="profileChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            <!-- Profile Dropdown Menu -->
+            <div id="profileDropdown" class="profile-dropdown absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-slate-200/60 overflow-hidden z-50">
+              <!-- User Info Header -->
+              <div class="px-5 py-4 bg-gradient-to-r from-accent/10 to-emerald-50 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 bg-gradient-to-br from-accent to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                    {{ user.fullName[0].upper() }}
+                  </div>
+                  <div>
+                    <p class="font-semibold text-slate-900">{{ user.fullName }}</p>
+                    <p class="text-xs text-slate-500 flex items-center gap-1">🌾 Farmer • Krishi Sujhav</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Menu Items -->
+              <div class="py-1 max-h-64 overflow-y-auto custom-scrollbar">
+                <a href="/dashboard" class="flex items-center gap-3 px-5 py-2.5 hover:bg-gradient-to-r hover:from-accent/5 hover:to-emerald-50 transition-all text-sm text-slate-700 group">
+                  <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                  </div>
+                  <span data-i18n="farmer_dashboard">Farmer Dashboard</span>
+                </a>
+                <a href="#" onclick="openWeatherPage();toggleProfileDropdown();return false;" class="flex items-center gap-3 px-5 py-2.5 hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-sky-50 transition-all text-sm text-slate-700 group">
+                  <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                  </div>
+                  <span data-i18n="weather_forecast">Weather Forecast</span>
+                </a>
+                <a href="#" onclick="document.getElementById('newChatBtn').click();toggleProfileDropdown();return false;" class="flex items-center gap-3 px-5 py-2.5 hover:bg-gradient-to-r hover:from-accent/5 hover:to-teal-50 transition-all text-sm text-slate-700 group">
+                  <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center group-hover:bg-teal-200 transition-colors">
+                    <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                  </div>
+                  <span data-i18n="new_chat">New Chat</span>
+                </a>
+                <a href="#" onclick="document.getElementById('languageSelector').focus();toggleProfileDropdown();return false;" class="flex items-center gap-3 px-5 py-2.5 hover:bg-gradient-to-r hover:from-purple-50/80 hover:to-violet-50 transition-all text-sm text-slate-700 group">
+                  <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                    <svg class="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                  </div>
+                  <span data-i18n="change_language">Change Language</span>
+                </a>
+              </div>
+              
+              <!-- Divider + Logout -->
+              <div class="border-t border-slate-100">
+                <div class="py-1.5">
+                  <button onclick="if(confirm('Are you sure you want to logout?')) window.location.href='{{ url_for('logout') }}'" class="flex items-center gap-3 px-5 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600 w-full text-left group">
+                    <div class="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </div>
+                    <span data-i18n="logout">Logout</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div class="flex items-center gap-2">
+              <a href="{{ url_for('login') }}" class="px-4 py-1.5 text-sm bg-gradient-to-r from-accent to-emerald-600 text-white rounded-lg hover:shadow-lg font-medium transition-all">Login</a>
+              <a href="{{ url_for('signup') }}" class="px-4 py-1.5 text-sm border border-accent text-accent rounded-lg hover:bg-accent/5 font-medium transition-colors">Sign Up</a>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </header>
+
+      <!-- Chat Messages -->
+      <div class="flex-1 overflow-y-auto p-6 space-y-4 flex flex-col custom-scrollbar farmer-bg" id="chatMessages">
+        <!-- Welcome message will be dynamically added by JavaScript -->
+      </div>
+
+      <!-- Footer Chat Input -->
+      <footer class="border-t border-slate-200/60 p-3 bg-white/80 backdrop-blur-sm">
+        <!-- Hidden file inputs -->
+        <input type="file" id="imageInput" accept="image/*" style="display: none;" multiple>
+        <input type="file" id="documentInput" accept=".pdf,.doc,.docx,.txt,.pptx" style="display: none;" multiple>
+        
+        <!-- Camera modal -->
+        <div id="cameraModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+          <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold camera-modal-title">{{ translations.take_photo if translations and translations.take_photo else 'Take Photo' }}</h3>
+              <button id="closeCameraModal" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <video id="cameraStream" class="w-full rounded mb-4" autoplay></video>
+            <canvas id="photoCanvas" style="display: none;"></canvas>
+            <div class="flex gap-2 justify-center">
+              <button id="capturePhoto" class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 capture-btn">{{ translations.capture if translations and translations.capture else 'Capture' }}</button>
+              <button id="retakePhoto" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50" style="display: none;">{{ translations.cancel if translations and translations.cancel else 'Retake' }}</button>
+              <button id="usePhoto" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700" style="display: none;">{{ translations.send if translations and translations.send else 'Use Photo' }}</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Voice recording modal -->
+        <div id="voiceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+          <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Voice Message</h3>
+              <button id="closeVoiceModal" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div class="text-center">
+              <div class="mb-4">
+                <div id="recordingIndicator" class="w-20 h-20 mx-auto bg-red-500 rounded-full flex items-center justify-center mb-2" style="display: none;">
+                  <svg class="w-8 h-8 text-white animate-pulse" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"></path>
+                  </svg>
+                </div>
+                <div id="recordingTime" class="text-lg font-mono text-gray-600">00:00</div>
+              </div>
+              <div class="flex gap-2 justify-center">
+                <button id="startRecording" class="px-6 py-3 bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"></path>
+                  </svg>
+                  Start Recording
+                </button>
+                <button id="stopRecording" class="px-6 py-3 bg-gray-500 text-white rounded-full hover:bg-gray-600" style="display: none;">Stop Recording</button>
+                <button id="sendVoice" class="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700" style="display: none;">Send</button>
+              </div>
+              <audio id="recordedAudio" controls class="w-full mt-4" style="display: none;"></audio>
+            </div>
+          </div>
+        </div>
+
+        <form id="chatForm" class="flex items-center gap-3">
+          <!-- Left Icons -->
+          <div class="flex items-center gap-2">
+            <button type="button" id="imageButton" class="p-2 hover:bg-slate-100 rounded-lg" title="Upload Image">
+              <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+            </button>
+            <button type="button" id="cameraButton" class="p-2 hover:bg-slate-100 rounded-lg" title="Open Camera">
+              <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+            </button>
+            <button type="button" id="documentButton" class="p-2 hover:bg-slate-100 rounded-lg" title="Upload Document">
+              <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Text Box -->
+          <textarea 
+            id="chatInput" 
+            placeholder="{{ translations.chat_placeholder if translations and translations.chat_placeholder else 'Ask about crops, soil, or market prices...' }}" 
+            class="flex-1 border border-slate-200/60 rounded-2xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 resize-none min-h-[50px] max-h-[120px] bg-white/60 backdrop-blur-sm placeholder:text-slate-400 transition-all shadow-sm"
+            rows="1"></textarea>
+
+          <!-- Right Voice Icon -->
+          <button type="button" id="voiceButton" class="p-2 hover:bg-slate-100 rounded-lg" title="Voice Chat">
+            <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+            </svg>
+          </button>
+        </form>
+      </footer>
+    </main>
+  </div>
+
+  <!-- External JavaScript Files -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/media.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/language.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/voice-system.js') }}"></script>
+  
+  <!-- Initialize user state and functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize user state from server
+      const serverUserState = {
+        isLoggedIn: {{ 'true' if user else 'false' }},
+        {% if user %}
+        fullName: "{{ user.fullName }}",
+        firstName: "{{ user.fullName.split(' ')[0] }}"
+        {% else %}
+        fullName: null,
+        firstName: null
+        {% endif %}
+      };
+      
+      // Expose server translations and language to client scripts
+      window.APP_TRANSLATIONS = {{ translations|tojson }} || {};
+      window.APP_LANG = '{{ lang }}';
+
+      // Initialize application with server state
+      initializeUserState(serverUserState);
+      
+      // Initialize media functionality
+      initializeMediaFunctionality();
+      
+      // Initialize language selector
+      initializeLanguageSelector();
+
+      // Initialize sidebar toggle
+      initializeSidebarToggle();
+
+      // Initialize weather widget
+      initializeWeatherWidget();
+
+      // Initialize chat history
+      initializeChatHistory();
+
+      // Initialize sidebar resize
+      initializeSidebarResize();
+    });
+
+    // Sidebar Toggle Functionality
+    function isMobile() { return window.innerWidth < 768; }
+
+    function closeSidebarMobile() {
+      const sidebar = document.getElementById('chatHistorySidebar');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+
+    function initializeSidebarToggle() {
+      const sidebar = document.getElementById('chatHistorySidebar');
+      const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+      const openSidebarBtn = document.getElementById('openSidebarBtn');
+      const backdrop = document.getElementById('mobileSidebarBackdrop');
+      let isOpen = true;
+
+      closeSidebarBtn.addEventListener('click', function() {
+        if (isMobile()) {
+          closeSidebarMobile();
+        } else {
+          isOpen = false;
+          const currentWidth = parseInt(getComputedStyle(sidebar).width, 10);
+          sidebar.style.marginLeft = `-${currentWidth}px`;
+          openSidebarBtn.classList.remove('hidden');
+        }
+      });
+
+      openSidebarBtn.addEventListener('click', function() {
+        if (isMobile()) {
+          sidebar.classList.add('mobile-open');
+          if (backdrop) backdrop.classList.add('active');
+        } else {
+          isOpen = true;
+          sidebar.style.marginLeft = '0';
+          const savedWidth = localStorage.getItem('sidebarWidth');
+          if (savedWidth) sidebar.style.width = savedWidth + 'px';
+          openSidebarBtn.classList.add('hidden');
+        }
+      });
+    }
+
+    // Profile Dropdown Toggle
+    function toggleProfileDropdown() {
+      const dropdown = document.getElementById('profileDropdown');
+      const chevron = document.getElementById('profileChevron');
+      if (dropdown) {
+        dropdown.classList.toggle('active');
+        if (chevron) chevron.style.transform = dropdown.classList.contains('active') ? 'rotate(180deg)' : '';
+      }
+    }
+
+    // Close profile dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const container = document.getElementById('profileContainer');
+      const dropdown = document.getElementById('profileDropdown');
+      if (container && dropdown && !container.contains(e.target)) {
+        dropdown.classList.remove('active');
+        const chevron = document.getElementById('profileChevron');
+        if (chevron) chevron.style.transform = '';
+      }
+    });
+
+    // Resizable Sidebar
+    function initializeSidebarResize() {
+      const sidebar = document.getElementById('chatHistorySidebar');
+      const handle = document.getElementById('sidebarResizeHandle');
+      if (!sidebar || !handle) return;
+
+      let isResizing = false;
+      let startX, startWidth;
+
+      // Restore saved width
+      const savedWidth = localStorage.getItem('sidebarWidth');
+      if (savedWidth) {
+        sidebar.style.width = savedWidth + 'px';
+      }
+
+      handle.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = parseInt(getComputedStyle(sidebar).width, 10);
+        document.body.classList.add('no-select');
+        sidebar.style.transition = 'none';
+        handle.classList.add('active');
+        e.preventDefault();
+      });
+
+      document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        const newWidth = startWidth + (e.clientX - startX);
+        if (newWidth >= 200 && newWidth <= 500) {
+          sidebar.style.width = newWidth + 'px';
+        }
+      });
+
+      document.addEventListener('mouseup', function() {
+        if (!isResizing) return;
+        isResizing = false;
+        document.body.classList.remove('no-select');
+        sidebar.style.transition = '';
+        handle.classList.remove('active');
+        const currentWidth = parseInt(getComputedStyle(sidebar).width, 10);
+        localStorage.setItem('sidebarWidth', currentWidth);
+      });
+    }
+
+    // Global function to open weather page
+    function openWeatherPage() {
+      const location = window.currentWeatherLocation || 'Delhi,IN';
+      window.open(`/weather?location=${encodeURIComponent(location)}`, '_blank', 'width=1200,height=800');
+    }
+
+    // Live Weather Widget
+    function initializeWeatherWidget() {
+      // Store default location
+      window.currentWeatherLocation = 'Delhi,IN';
+      
+      // Show default values immediately (no loading delay)
+      document.getElementById('weatherTempCircle').textContent = '--°';
+      document.getElementById('weatherCityPopup').textContent = 'Detecting location...';
+      
+      // Function to fetch and display weather (runs in background)
+      async function fetchWeather(location) {
+        try {
+          const resp = await fetch(`/api/weather?location=${encodeURIComponent(location)}`);
+          const weatherData = await resp.json();
+          
+          if (resp.ok && weatherData.success) {
+            updateWeatherUI(weatherData);
+          }
+        } catch (e) {
+          console.error('Weather fetch failed:', e);
+          // Keep default values, don't show error
+        }
+      }
+      
+      function updateWeatherUI(weatherData) {
+        const { current } = weatherData;
+        
+        // Update circular widget temperature
+        document.getElementById('weatherTempCircle').textContent = `${current.temperature}°`;
+        
+        // Update simple tooltip
+        document.getElementById('weatherCityPopup').textContent = current.city;
+        document.getElementById('weatherConditionPopup').textContent = current.description;
+        document.getElementById('weatherTempPopup').textContent = `${current.temperature}°C`;
+        document.getElementById('weatherHumidityPopup').textContent = `${current.humidity}%`;
+        document.getElementById('weatherWindPopup').textContent = `${current.wind_speed} m/s`;
+        
+        // Store location for weather page
+        window.currentWeatherLocation = current.city || 'Delhi,IN';
+      }
+      
+      // Load Delhi immediately for fast display, then try geolocation in background
+      fetchWeather('Delhi,IN');
+      
+      // Try to get current location with better timeout and accuracy
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(pos) {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            console.log('Got current location:', lat, lon);
+            window.currentWeatherLocation = `${lat},${lon}`;
+            fetchWeather(`${lat},${lon}`); // Update with actual location
+          },
+          function(error) {
+            console.log('Geolocation failed:', error.message);
+            // Keep Delhi as fallback
+          },
+          { timeout: 8000, maximumAge: 300000, enableHighAccuracy: true } // 8 sec timeout, 5 min cache, high accuracy
+        );
+      }
+    }
+
+    // Chat History Functionality
+    function initializeChatHistory() {
+      const newChatBtn = document.getElementById('newChatBtn');
+      const clearChatBtn = document.getElementById('clearChatBtn');
+      const chatHistoryList = document.getElementById('chatHistoryList');
+      
+      // Load chat sessions from server
+      loadChatHistoryFromServer();
+      
+      // New chat button - creates new session
+      newChatBtn.addEventListener('click', async function() {
+        try {
+          const resp = await fetch('/api/sessions/new', { method: 'POST' });
+          const data = await resp.json();
+          
+          if (data.success) {
+            document.getElementById('chatMessages').innerHTML = '';
+            addWelcomeMessage();
+            loadChatHistoryFromServer();
+            console.log('New session created:', data.session_id);
+          }
+        } catch (err) {
+          console.error('Failed to create new session:', err);
+          alert('Failed to create new chat session');
+        }
+      });
+      
+      // Clear chat button
+      clearChatBtn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to clear all chats?')) {
+          fetch('/api/chat/clear', { method: 'POST' })
+            .then(resp => resp.json())
+            .then(data => {
+              if (data.success) {
+                document.getElementById('chatMessages').innerHTML = '';
+                addWelcomeMessage();
+                loadChatHistoryFromServer();
+                alert('Chat history cleared!');
+              }
+            })
+            .catch(err => console.error('Clear chat failed:', err));
+        }
+      });
+    }
+
+    // Load chat sessions from backend
+    async function loadChatHistoryFromServer() {
+      try {
+        const resp = await fetch('/api/sessions');
+        const data = await resp.json();
+        
+        const chatHistoryList = document.getElementById('chatHistoryList');
+        chatHistoryList.innerHTML = '';
+        
+        if (data.sessions && data.sessions.length > 0) {
+          // Group sessions by date
+          const grouped = {};
+          data.sessions.forEach(sess => {
+            const date = new Date(sess.first_message_time).toLocaleDateString();
+            if (!grouped[date]) grouped[date] = [];
+            grouped[date].push(sess);
+          });
+          
+          // Render grouped sessions
+          Object.keys(grouped).forEach(date => {
+            const dateHeader = document.createElement('div');
+            dateHeader.className = 'px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide';
+            dateHeader.textContent = date === new Date().toLocaleDateString() ? 'Today' : date;
+            chatHistoryList.appendChild(dateHeader);
+            
+            grouped[date].forEach(sess => {
+              const sessionItem = document.createElement('div');
+              sessionItem.className = 'group relative px-3 py-2.5 hover:bg-accent/5 rounded-lg cursor-pointer text-sm transition-colors ' + 
+                (sess.session_id === data.active_session_id ? 'bg-accent/10 border-l-2 border-accent' : '');
+              
+              const titleDiv = document.createElement('div');
+              titleDiv.className = 'text-slate-700 font-medium truncate pr-6';
+              titleDiv.textContent = sess.title;
+              
+              const metaDiv = document.createElement('div');
+              metaDiv.className = 'text-xs text-slate-500 mt-0.5 flex items-center gap-2';
+              
+              const msgCount = document.createElement('span');
+              msgCount.textContent = `${sess.message_count} ${sess.message_count === 1 ? 'message' : 'messages'}`;
+              
+              const sizeIndicator = document.createElement('span');
+              sizeIndicator.className = sess.is_full ? 'text-red-500 font-semibold' : 'text-slate-400';
+              sizeIndicator.textContent = `${sess.size_mb}MB`;
+              
+              metaDiv.appendChild(msgCount);
+              metaDiv.appendChild(document.createTextNode('•'));
+              metaDiv.appendChild(sizeIndicator);
+              
+              if (sess.is_full) {
+                const fullBadge = document.createElement('span');
+                fullBadge.className = 'text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1';
+                fullBadge.textContent = 'FULL';
+                metaDiv.appendChild(fullBadge);
+              }
+              
+              sessionItem.appendChild(titleDiv);
+              sessionItem.appendChild(metaDiv);
+              
+              sessionItem.onclick = () => loadSession(sess.session_id);
+              chatHistoryList.appendChild(sessionItem);
+            });
+          });
+        } else {
+          chatHistoryList.innerHTML = '<div class="text-sm text-slate-400 p-3 text-center">No chat sessions yet<br><span class="text-xs">Start a conversation!</span></div>';
+        }
+      } catch (e) {
+        console.error('Failed to load sessions:', e);
+        chatHistoryList.innerHTML = '<div class="text-sm text-red-400 p-3">Failed to load sessions</div>';
+      }
+    }
+
+    // Load specific session messages
+    async function loadSession(sessionId) {
+      try {
+        // Activate the session
+        await fetch(`/api/sessions/${sessionId}/activate`, { method: 'POST' });
+        
+        // Get session messages
+        const resp = await fetch(`/api/sessions/${sessionId}/messages`);
+        const data = await resp.json();
+        
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.innerHTML = '';
+        
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            // Add user message
+            addMessageToChat(msg.user_message, 'user');
+            // Add AI response
+            addMessageToChat(msg.ai_response, 'ai');
+          });
+        } else {
+          addWelcomeMessage();
+        }
+        
+        // Reload sidebar to update active indicator
+        loadChatHistoryFromServer();
+        
+      } catch (e) {
+        console.error('Failed to load session:', e);
+        alert('Failed to load chat session');
+      }
+    }
+
+    // Helper function to add message to chat
+    function addMessageToChat(text, type) {
+      const chatMessages = document.getElementById('chatMessages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'} mb-4 items-end gap-2`;
+      
+      // Avatar for AI messages
+      if (type !== 'user') {
+        const avatar = document.createElement('div');
+        avatar.className = 'w-8 h-8 bg-gradient-to-br from-accent to-emerald-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-md';
+        avatar.textContent = 'KS';
+        msgDiv.appendChild(avatar);
+      }
+      
+      const bubble = document.createElement('div');
+      bubble.className = `max-w-[70%] px-4 py-3 rounded-2xl ${
+        type === 'user' 
+          ? 'bg-gradient-to-br from-accent to-emerald-600 text-white rounded-br-sm shadow-md' 
+          : 'bg-white/90 backdrop-blur border border-slate-200/60 text-slate-800 rounded-bl-sm shadow-sm'
+      }`;
+      bubble.style.whiteSpace = 'pre-wrap';
+      bubble.textContent = text;
+      
+      msgDiv.appendChild(bubble);
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Load specific chat by ID (deprecated - use loadSession instead)
+    function loadChatById(chatId) {
+      console.log('Loading chat:', chatId);
+    }
+
+    // Add welcome message with quick-action cards
+    function addWelcomeMessage() {
+      const chatMessages = document.getElementById('chatMessages');
+      // Get translations — from window.APP_TRANSLATIONS (set by language.js) or Jinja fallback
+      const t = window.APP_TRANSLATIONS || {};
+      const heroTitle = t.welcome_hero_title || '{{ translations.welcome_hero_title if translations and translations.welcome_hero_title else "Welcome to Krishi Sujhav" }}';
+      const heroSubtitle = t.welcome_hero_subtitle || '{{ translations.welcome_hero_subtitle if translations and translations.welcome_hero_subtitle else "Your AI-powered farming companion. Ask me anything!" }}';
+      const cropAdvice = t.card_crop_advice || '{{ translations.card_crop_advice if translations and translations.card_crop_advice else "Crop Advice" }}';
+      const cropAdviceQ = t.card_crop_advice_q || '{{ translations.card_crop_advice_q if translations and translations.card_crop_advice_q else "What crops should I grow this season?" }}';
+      const pestControl = t.card_pest_control || '{{ translations.card_pest_control if translations and translations.card_pest_control else "Pest Control" }}';
+      const pestControlQ = t.card_pest_control_q || '{{ translations.card_pest_control_q if translations and translations.card_pest_control_q else "How to protect crops from pests?" }}';
+      const marketPrices = t.card_market_prices || '{{ translations.card_market_prices if translations and translations.card_market_prices else "Market Prices" }}';
+      const marketPricesQ = t.card_market_prices_q || '{{ translations.card_market_prices_q if translations and translations.card_market_prices_q else "Current market price of wheat?" }}';
+      const weather = t.card_weather || '{{ translations.card_weather if translations and translations.card_weather else "Weather" }}';
+      const weatherQ = t.card_weather_q || '{{ translations.card_weather_q if translations and translations.card_weather_q else "Weather forecast for this week?" }}';
+
+      const welcome = document.createElement('div');
+      welcome.className = 'text-center py-8 max-w-2xl mx-auto w-full';
+      welcome.id = 'welcomeBlock';
+      welcome.innerHTML = `
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-accent/20 to-emerald-100 rounded-full mb-4 shadow-lg">
+          <span class="text-4xl">🌾</span>
+        </div>
+        <h2 class="text-2xl font-bold bg-gradient-to-r from-emerald-700 to-accent bg-clip-text text-transparent mb-2">${heroTitle}</h2>
+        <p class="text-slate-500 mb-8">${heroSubtitle}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+          <div onclick="document.getElementById('chatInput').value='${cropAdviceQ}';document.getElementById('chatForm').dispatchEvent(new Event('submit'));" class="p-4 bg-white/80 backdrop-blur rounded-xl border border-slate-200/60 hover:border-accent/40 hover:shadow-lg cursor-pointer transition-all group">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">🌱</span>
+              <span class="font-medium text-slate-700 text-sm group-hover:text-accent transition-colors">${cropAdvice}</span>
+            </div>
+            <p class="text-xs text-slate-400">${cropAdviceQ}</p>
+          </div>
+          <div onclick="document.getElementById('chatInput').value='${pestControlQ}';document.getElementById('chatForm').dispatchEvent(new Event('submit'));" class="p-4 bg-white/80 backdrop-blur rounded-xl border border-slate-200/60 hover:border-accent/40 hover:shadow-lg cursor-pointer transition-all group">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">🛡️</span>
+              <span class="font-medium text-slate-700 text-sm group-hover:text-accent transition-colors">${pestControl}</span>
+            </div>
+            <p class="text-xs text-slate-400">${pestControlQ}</p>
+          </div>
+          <div onclick="document.getElementById('chatInput').value='${marketPricesQ}';document.getElementById('chatForm').dispatchEvent(new Event('submit'));" class="p-4 bg-white/80 backdrop-blur rounded-xl border border-slate-200/60 hover:border-accent/40 hover:shadow-lg cursor-pointer transition-all group">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">📊</span>
+              <span class="font-medium text-slate-700 text-sm group-hover:text-accent transition-colors">${marketPrices}</span>
+            </div>
+            <p class="text-xs text-slate-400">${marketPricesQ}</p>
+          </div>
+          <div onclick="document.getElementById('chatInput').value='${weatherQ}';document.getElementById('chatForm').dispatchEvent(new Event('submit'));" class="p-4 bg-white/80 backdrop-blur rounded-xl border border-slate-200/60 hover:border-accent/40 hover:shadow-lg cursor-pointer transition-all group">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-lg">🌤️</span>
+              <span class="font-medium text-slate-700 text-sm group-hover:text-accent transition-colors">${weather}</span>
+            </div>
+            <p class="text-xs text-slate-400">${weatherQ}</p>
+          </div>
+        </div>
+      `;
+      chatMessages.appendChild(welcome);
+    }
+
+    // Initialize welcome message if chat is empty
+    if (document.getElementById('chatMessages').children.length === 0) {
+      addWelcomeMessage();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast - Krishi Sujhav</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .accent {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @media (max-width: 767px) {
+            .weather-sidebar { display: none !important; }
+            .weather-search-row { flex-direction: column; }
+            .weather-search-row button { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen bg-slate-50">
+        <!-- Sidebar with User Profile -->
+        <aside class="weather-sidebar w-64 bg-white border-r border-slate-200 flex flex-col">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b border-slate-200">
+                <h2 class="font-semibold text-slate-900">Weather</h2>
+                <p class="text-xs text-slate-500">Forecast & Advice</p>
+            </div>
+            
+            <!-- Spacer -->
+            <div class="flex-1"></div>
+            
+            <!-- User Profile at Bottom -->
+            <div class="p-4 border-t border-slate-200">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                        {{ user.fullName[0].upper() if user else 'G' }}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-slate-900 truncate">
+                            Logged in as {{ user.fullName.split(' ')[0] if user else 'Guest' }}
+                        </p>
+                    </div>
+                </div>
+                <button onclick="window.location.href='/logout'" class="w-full py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition-colors">
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.close()" class="text-slate-600 hover:text-slate-900 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="font-semibold text-slate-900">Weather Forecast</h1>
+                        <p class="text-sm text-slate-500">Real-time weather and farming advice</p>
+                    </div>
+                </div>
+                <div class="text-sm text-slate-500" id="lastUpdated">Updated: --</div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6">
+                <!-- Location Search Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 fade-in">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Search Location</h2>
+                    <div class="flex flex-col sm:flex-row gap-3 weather-search-row">
+                        <input 
+                            type="text" 
+                            id="locationInput" 
+                            placeholder="Enter city name (e.g., Delhi, Mumbai)"
+                            class="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            onkeypress="if(event.key==='Enter') updateWeather()">
+                        <div class="flex gap-2 sm:gap-3">
+                            <button onclick="updateWeather()" class="flex-1 sm:flex-none px-6 py-3 accent text-white rounded-lg hover:opacity-90 transition-all font-medium">
+                                Search
+                            </button>
+                            <button onclick="useCurrentLocation()" class="flex-1 sm:flex-none px-4 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-all font-medium flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                                    <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                </svg>
+                                <span class="hidden sm:inline">My Location</span>
+                                <span class="sm:hidden">GPS</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Weather Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-8 fade-in">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 gap-3">
+                        <div>
+                            <h2 id="cityName" class="text-xl md:text-3xl font-bold text-slate-900 mb-1">Loading...</h2>
+                            <p id="weatherCondition" class="text-slate-600 capitalize">--</p>
+                        </div>
+                        <div id="weatherIcon" class="text-6xl">🌤️</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Temperature -->
+                        <div class="bg-gradient-to-br from-orange-50 to-red-50 p-4 rounded-xl border border-orange-100">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-orange-500">🌡️</span>
+                                <span class="text-sm font-medium text-slate-700">Temperature</span>
+                            </div>
+                            <div id="temperature" class="text-2xl font-bold text-orange-600">--°C</div>
+                        </div>
+
+                        <!-- Feels Like -->
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-100">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-purple-500">💨</span>
+                                <span class="text-sm font-medium text-slate-700">Feels Like</span>
+                            </div>
+                            <div id="feelsLike" class="text-2xl font-bold text-purple-600">--°C</div>
+                        </div>
+
+                        <!-- Humidity -->
+                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border border-blue-100">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-blue-500">💧</span>
+                                <span class="text-sm font-medium text-slate-700">Humidity</span>
+                            </div>
+                            <div id="humidity" class="text-2xl font-bold text-blue-600">--%</div>
+                        </div>
+
+                        <!-- Wind Speed -->
+                        <div class="bg-gradient-to-br from-teal-50 to-emerald-50 p-4 rounded-xl border border-teal-100">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-teal-500">🍃</span>
+                                <span class="text-sm font-medium text-slate-700">Wind Speed</span>
+                            </div>
+                            <div id="windSpeed" class="text-2xl font-bold text-teal-600">-- m/s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 48-Hour Forecast Card -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-6 fade-in">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4 md:mb-6">48-Hour Forecast</h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mb-6">
+                        <!-- Rain Prediction -->
+                        <div id="rainPrediction" class="bg-gradient-to-br from-blue-50 to-cyan-50 p-5 rounded-xl border border-blue-200">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">🌧️</span>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-slate-800">Rain Forecast</h3>
+                                    <p id="rainStatus" class="text-sm text-slate-600">Checking...</p>
+                                </div>
+                            </div>
+                            <div id="rainDetails" class="text-sm text-slate-700"></div>
+                        </div>
+
+                        <!-- Snow Prediction -->
+                        <div id="snowPrediction" class="bg-gradient-to-br from-cyan-50 to-blue-50 p-5 rounded-xl border border-cyan-200" style="display: none;">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-3xl">❄️</span>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-slate-800">Snow Forecast</h3>
+                                    <p id="snowStatus" class="text-sm text-slate-600">Checking...</p>
+                                </div>
+                            </div>
+                            <div id="snowDetails" class="text-sm text-slate-700"></div>
+                        </div>
+                    </div>
+
+                    <!-- Farming Advice -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl border border-green-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-3xl">Advice</span>
+                            <h3 class="font-semibold text-slate-800">Farming Advice</h3>
+                        </div>
+                        <ul id="farmingAdviceList" class="space-y-2 text-sm text-slate-700">
+                            <li>Loading farming recommendations...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLocation = 'Delhi,IN';
+
+        // Initialize weather on page load
+        window.onload = function() {
+            // Check if location was passed via URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const location = urlParams.get('location');
+            
+            if (location) {
+                currentLocation = location;
+                // Check if it's coordinates (lat,lon format)
+                if (location.match(/^-?\d+\.?\d*,-?\d+\.?\d*$/)) {
+                    document.getElementById('locationInput').value = 'My Location';
+                } else {
+                    document.getElementById('locationInput').value = location;
+                }
+                fetchWeatherData(location);
+            } else {
+                // Try to get user's current location first
+                document.getElementById('cityName').textContent = 'Detecting your location...';
+                
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        function(pos) {
+                            const lat = pos.coords.latitude;
+                            const lon = pos.coords.longitude;
+                            console.log('Got current location:', lat, lon);
+                            currentLocation = `${lat},${lon}`;
+                            document.getElementById('locationInput').value = 'My Location';
+                            fetchWeatherData(currentLocation);
+                        },
+                        function(error) {
+                            console.log('Geolocation failed, using Delhi:', error.message);
+                            // Fallback to Delhi if geolocation fails
+                            document.getElementById('locationInput').value = 'Delhi,IN';
+                            currentLocation = 'Delhi,IN';
+                            fetchWeatherData('Delhi,IN');
+                        },
+                        { timeout: 8000, enableHighAccuracy: true, maximumAge: 300000 }
+                    );
+                } else {
+                    console.log('Geolocation not supported, using Delhi');
+                    document.getElementById('locationInput').value = 'Delhi,IN';
+                    currentLocation = 'Delhi,IN';
+                    fetchWeatherData('Delhi,IN');
+                }
+            }
+        };
+
+        let searchTimeout;
+        function updateWeather() {
+            const input = document.getElementById('locationInput');
+            const location = input.value.trim();
+            
+            if (!location) {
+                alert('Please enter a city name');
+                return;
+            }
+            
+            // Debounce to prevent rapid requests
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentLocation = location;
+                fetchWeatherData(location);
+            }, 500);
+        }
+
+        function useCurrentLocation() {
+            document.getElementById('cityName').textContent = 'Detecting location...';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        // Pass coordinates to backend - OpenWeather will handle them
+                        currentLocation = `${lat},${lon}`;
+                        document.getElementById('locationInput').value = 'My Location';
+                        fetchWeatherData(currentLocation);
+                    },
+                    function(error) {
+                        console.error('Geolocation error:', error);
+                        let errorMsg = 'Unable to access location.';
+                        if (error.code === 1) {
+                            errorMsg = 'Location permission denied. Please enable location access in your browser settings.';
+                        } else if (error.code === 2) {
+                            errorMsg = 'Location unavailable. Please try entering a city name.';
+                        } else if (error.code === 3) {
+                            errorMsg = 'Location request timed out. Please try again or enter a city name.';
+                        }
+                        alert(errorMsg + ' Using Delhi as default.');
+                        currentLocation = 'Delhi,IN';
+                        document.getElementById('locationInput').value = 'Delhi,IN';
+                        fetchWeatherData('Delhi,IN');
+                    },
+                    { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser. Please enter a city name.');
+                currentLocation = 'Delhi,IN';
+                document.getElementById('locationInput').value = 'Delhi,IN';
+                fetchWeatherData('Delhi,IN');
+            }
+        }
+
+        async function fetchWeatherData(location) {
+            // Show loading state
+            document.getElementById('cityName').textContent = 'Loading...';
+            
+            try {
+                const response = await fetch(`/api/weather?location=${encodeURIComponent(location)}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateUI(data);
+                    // Update last updated time
+                    const now = new Date();
+                    document.getElementById('lastUpdated').textContent = `Updated: ${now.toLocaleTimeString()}`;
+                } else {
+                    showError(data.message || 'Unable to fetch weather data');
+                }
+            } catch (error) {
+                console.error('Weather fetch error:', error);
+                showError('Network error. Please check your connection and try again.');
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('cityName').textContent = 'Error';
+            document.getElementById('weatherCondition').textContent = message;
+            document.getElementById('temperature').textContent = '--°C';
+            document.getElementById('feelsLike').textContent = '--°C';
+            document.getElementById('humidity').textContent = '--%';
+            document.getElementById('windSpeed').textContent = '-- m/s';
+        }
+
+        function updateUI(data) {
+            const current = data.current;
+            const predictions = data.predictions || { rain: { expected: false }, snow: { expected: false } };
+            const advice = data.farming_advice || ['Weather data available'];
+            
+            // Update current weather
+            document.getElementById('cityName').textContent = current.city || 'Unknown';
+            document.getElementById('weatherCondition').textContent = current.description || '--';
+            document.getElementById('temperature').textContent = (current.temperature || '--') + '°C';
+            document.getElementById('feelsLike').textContent = (current.feels_like || '--') + '°C';
+            document.getElementById('humidity').textContent = (current.humidity || '--') + '%';
+            document.getElementById('windSpeed').textContent = (current.wind_speed || '--') + ' m/s';
+            
+            // Update weather icon
+            const iconMap = {
+                'clear': '☀️',
+                'clouds': '☁️',
+                'rain': '🌧️',
+                'drizzle': '🌦️',
+                'thunderstorm': '⛈️',
+                'snow': '❄️',
+                'mist': '🌫️',
+                'fog': '🌫️',
+                'haze': '🌫️'
+            };
+            
+            const condition = current.description.toLowerCase();
+            let icon = '🌤️';
+            for (const [key, value] of Object.entries(iconMap)) {
+                if (condition.includes(key)) {
+                    icon = value;
+                    break;
+                }
+            }
+            document.getElementById('weatherIcon').textContent = icon;
+            
+            // Update rain prediction
+            if (predictions.rain.expected) {
+                document.getElementById('rainStatus').textContent = `Expected (${predictions.rain.count} times)`;
+                document.getElementById('rainStatus').className = 'text-sm font-semibold text-red-600';
+                document.getElementById('rainDetails').textContent = 'Times: ' + predictions.rain.times.join(', ');
+            } else {
+                document.getElementById('rainStatus').textContent = 'No rain expected';
+                document.getElementById('rainStatus').className = 'text-sm font-semibold text-green-600';
+                document.getElementById('rainDetails').textContent = 'Clear skies for the next 48 hours';
+            }
+            
+            // Update snow prediction
+            if (predictions.snow.expected) {
+                document.getElementById('snowPrediction').style.display = 'block';
+                document.getElementById('snowStatus').textContent = `Expected (${predictions.snow.count} times)`;
+                document.getElementById('snowStatus').className = 'text-sm font-semibold text-red-600';
+                document.getElementById('snowDetails').textContent = 'Times: ' + predictions.snow.times.join(', ');
+            } else {
+                document.getElementById('snowPrediction').style.display = 'none';
+            }
+            
+            // Update farming advice
+            if (advice && advice.length > 0) {
+                document.getElementById('farmingAdviceList').innerHTML = advice.map(tip => 
+                    `<li class="flex items-start gap-2">
+                        <span class="text-green-600 mt-1">OK</span>
+                        <span>${tip}</span>
+                    </li>`
+                ).join('');
+            }
+            
+            // Update timestamp
+            const now = new Date();
+            document.getElementById('lastUpdated').textContent = `Updated: ${now.toLocaleTimeString()}`;
+        }
+    </script>
+    <!-- Unified language system -->
+    <script src="{{ url_for('static', filename='js/language.js') }}"></script>
+</body>
+</html>
