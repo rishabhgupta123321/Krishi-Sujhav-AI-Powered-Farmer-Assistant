@@ -373,7 +373,7 @@ Open **http://127.0.0.1:5000** in your browser.
 
 **Rishabh Gupta**
 - GitHub: [GitHub](https://github.com/rishabhgupta123321)
-- LinkedIn: [LinkedIn]([https://linkedin.com/in/yourprofile](https://www.linkedin.com/in/-gupta-rishabh/))
+- LinkedIn: [LinkedIn](https://www.linkedin.com/in/-gupta-rishabh/)
 
 ## 📄 License
 
